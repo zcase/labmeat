@@ -25,7 +25,28 @@ class VascularGenerator:
                                      self.left_wall, self.right_wall,
                                      self.left_wall_startend, self.right_wall_startend)
 
-        # self.edges = self.generate_edges(self.pts)
+        self.tri = Delaunay(self.pts)
+        self.edges = self.generate_edges(self.tri, self.pts)
+
+    def generate_edges(self, tri, pts):
+        edges = []
+        for j, s in enumerate(tri.simplices):
+            p = pts[s].mean(axis=0)
+            tri_pts = pts[s]
+            for i, pt in enumerate(tri_pts):
+                if i == 0:
+                    continue
+                else:
+                    edges.append((tri_pts[i-1], pt))
+
+        #     plt.text(p[0], p[1], 'Cell #%d' % j, ha='center') # label triangles
+        # print('len: ', len(pts))
+        # plt.triplot(pts[:,0], pts[:,1], tri.simplices)
+        # plt.plot(pts[:,0], pts[:,1], 'o')
+        # plt.savefig('test.png')
+
+        # print(edges)
+        return edges
 
 
     # ====================== #
@@ -89,135 +110,7 @@ class VascularGenerator:
         return count
 
 
-    # def generate_edges(self, np_pts):
-    #     edges = []
-    #     # for point in np_pts:
-    #     #     print(point)
-
-    #     # print('\npts: ')
-    #     # print(np_pts)
-    #     # print('\nsorted pts: ')
-    #     # np_pts.sort(axis=0)
-    #     np_pts.view('i8,i8').sort(order=['f0'], axis=0)
-    #     # print(np_pts, type(np_pts))
-
-
-    #     # print(np_pts[0])
-    #     # print(np_pts[-1])
-
-    #     min_ind = np.array([i for i,v in enumerate(np_pts[:,0]) if v == np_pts[0][0]])
-    #     max_ind = np.array([i for i,v in enumerate(np_pts[:,0]) if v == np_pts[-1][0]])
-
-    #     # print('min: ')
-    #     # print(np_pts[min_ind])
-    #     # print('max: ')
-    #     # print(np_pts[max_ind])
-
-    #     # Create Left Vert Line
-    #     for i, point in enumerate(np_pts[min_ind]):
-    #         if i == 0:
-    #             continue
-    #         else:
-    #             edges.append((np_pts[min_ind][i-1], point))
-
-    #     # Create Right Vert Line
-    #     for i, point in enumerate(np_pts[max_ind]):
-    #         if i == 0:
-    #             continue
-    #         else:
-    #             edges.append((np_pts[max_ind][i-1], point))
-
-
-    #     for point in np_pts:
-    #         # print(point)
-    #         # indexs = np.where(np.all(np_pts[:, 0] != point) and np_pts > point[0])
-    #         # print('    Point: ', point, point[0], point[1])
-    #         # print('    Points: ', np_pts[:,0])
-    #         ind = np.array([i for i,v in enumerate(np_pts[:,0]) if v > point[0]])
-    #         if ind != []:
-    #             ind = ind[:2]
-    #             # https://stackoverflow.com/questions/14262654/numpy-get-random-set-of-rows-from-2d-array
-    #             # print('ind: ', ind)
-    #             num_of_edges = np.random.randint(low=1, high=len(ind))
-    #             idx = np.random.randint(len(np_pts[ind]), size=num_of_edges)
-    #             p = np_pts[ind]
-    #             # print('    ind         : ', ind)
-    #             # print('    pts[ind]    : \n', np_pts[ind], '\n END pts[ind]')
-    #             # print('    num_of_edges: ', num_of_edges)
-    #             # print('      p[idx]    :', p[idx], )
-
-    #             for chosen_pt in p[idx]:
-    #                 edges.append((point, chosen_pt))
-    #             num_of_edges = np.random.randint(low=0, high=6)
-    #             print(num_of_edges)
-    #             # if num_of_edges >= 3:
-    #             #     edges.append((point, np_pts[ind]))
-
-    #     # print(edges)
-
-    #     return edges
-
-    def is_planar(self, np_edges):
-        pass
-    # There should be a package called planar that can check this
-
-def find_neighbors(pindex, triang):
-    neighbors = list()
-    for simplex in triang.vertices:
-        if pindex in simplex:
-            neighbors.extend([simplex[i] for i in range(len(simplex)) if simplex[i] != pindex])
-            '''
-            this is a one liner for if a simplex contains the point we`re interested in,
-            extend the neighbors list by appending all the *other* point indices in the simplex
-            '''
-    #now we just have to strip out all the dulicate indices and return the neighbors list:
-    return list(set(neighbors))
 if __name__ == "__main__":
     vas_structure = VascularGenerator(num_of_nodes=3)
 
-    # print('\n\n\nEDGES:')
-    # for edge in vas_structure.edges:
-    #     print(edge)
-
-    # for pt_1, pt_2 in vas_structure.edges:
-    #     # print('p1: ', pt_1, '  ', )
-    #     # print('p2: ', pt_2)
-    #     combined = np.concatenate((np.array([pt_1]), np.array([pt_2])))
-    #     # print('combined: ', combined)
-    #     # print('\n\n')
-    #     plt.plot(combined[:,0], combined[:,1], 'ro-')
-
-    # plt.savefig('test.png')
-
-
-
-
-    tri = Delaunay(vas_structure.pts)
-    # print(tri.simplices)
-    print('len: ', len(vas_structure.pts))
-    for pt in vas_structure.pts:
-        print('Pt: ', pt)
-    print('\n')
-    #     # print('    ', pt[tri.simplices])
-
-    edges = []
-    for j, s in enumerate(tri.simplices):
-        p = vas_structure.pts[s].mean(axis=0)
-        print(s)
-        print('    Pts : ', vas_structure.pts[s])
-        tri_pts = vas_structure.pts[s]
-        for i, pt in enumerate(tri_pts):
-            if i == 0:
-                continue
-            else:
-                edges.append((tri_pts[i-1], pt))
-
-        print('    Mean:', p)
-        plt.text(p[0], p[1], '#%d' % j, ha='center') # label triangles
-    print('len: ', len(vas_structure.pts))
-    plt.triplot(vas_structure.pts[:,0], vas_structure.pts[:,1], tri.simplices)
-    plt.plot(vas_structure.pts[:,0], vas_structure.pts[:,1], 'o')
-    plt.savefig('test.png')
-
-    print(edges)
 
