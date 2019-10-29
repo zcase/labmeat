@@ -3,5 +3,5 @@ CS6890 Lab Grown Meat Project
 
 # Installation
 
-pip install scipy numpy matplotlib
+pip install scipy numpy matplotlib bresenham
 
