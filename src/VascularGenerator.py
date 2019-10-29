@@ -3,51 +3,63 @@ import matplotlib.pyplot as plt
 
 import networkx as nx
 from scipy.spatial import Delaunay
+from skimage.draw import line
+from bresenham import bresenham
 
 class VascularGenerator:
     def __init__(self, min_range=1, max_range=10, dim=2, num_of_nodes=20):
-        # if num_of_nodes < 10:
-        #     num_of_nodes = 10
-
+        # Create Wall start and end points
         self.left_wall_startend = np.array([[min_range, min_range], [min_range, max_range]])
         self.right_wall_startend = np.array([[max_range, min_range], [max_range, max_range]])
 
+        # Create Left and Right Walls
         self.left_wall, self.right_wall = self.create_walls(min_range, max_range, num_of_nodes)
 
-
-        self.left_wall_nodes = self.count_nodes(self.left_wall, self.left_wall_startend)
-        self.right_wall_nodes = self.count_nodes(self.right_wall, self.right_wall_startend)
-
-        # print("left: ", self.left_wall_nodes)
-        # print("right: ", self.right_wall_nodes)
-
+        # Generate random points
         self.pts = self.generate_pts(min_range, max_range, num_of_nodes, dim,
                                      self.left_wall, self.right_wall,
                                      self.left_wall_startend, self.right_wall_startend)
 
+        # Create the Planar graph using the Delaunay Method
         self.tri = Delaunay(self.pts)
+
+        # Create Edges
         self.edges = self.generate_edges(self.tri, self.pts)
+
+        # Convert Edges to image
+        self.img = self.convert_to_img2(self.edges, max_range)
+
 
     def generate_edges(self, tri, pts):
         edges = []
-        for j, s in enumerate(tri.simplices):
-            p = pts[s].mean(axis=0)
+        for _, s in enumerate(tri.simplices):
             tri_pts = pts[s]
+
             for i, pt in enumerate(tri_pts):
                 if i == 0:
                     continue
-                else:
-                    edges.append((tri_pts[i-1], pt))
+                elif pt[0] == tri_pts[-1][0] and pt[1] == tri_pts[-1][1]:
+                    edges.append((pt, tri_pts[0]))
 
-        #     plt.text(p[0], p[1], 'Cell #%d' % j, ha='center') # label triangles
-        # print('len: ', len(pts))
-        # plt.triplot(pts[:,0], pts[:,1], tri.simplices)
-        # plt.plot(pts[:,0], pts[:,1], 'o')
-        # plt.savefig('test.png')
+                edges.append((tri_pts[i-1], pt))
 
-        # print(edges)
         return edges
 
+
+    def convert_to_img2(self, edges, max_range):
+        img = np.zeros((max_range+1, max_range+1), dtype=float)
+
+        for edge in edges:
+            pt1, pt2 = edge
+            pts_on_line = np.array(list(bresenham(int(pt1[0]), int(pt1[1]), int(pt2[0]), int(pt2[1]))))
+
+            img[pts_on_line[:,0], pts_on_line[:,1]] = 1
+            img[int(pt1[0]), int(pt1[1])] = 2
+            img[int(pt2[0]), int(pt2[1])] = 2
+
+        img = np.pad(np.rot90(img), (0,0), 'linear_ramp', end_values=(5, -4))
+
+        return img
 
     # ====================== #
     # ==== Create Walls ==== #
@@ -91,11 +103,7 @@ class VascularGenerator:
 
     def generate_pts(self, min_range, max_range, num_pts, dim, lt_wall, rht_wall, lt_startend, rht_startend):
         pts = np.random.uniform(low=min_range, high=max_range, size=(num_pts, dim))
-        # print('pts    : ', pts)
-        # print('lt_wall: ', lt_wall)
-        # print('rt_wall: ', rht_wall)
-        # print('lt_star: ', lt_startend)
-        # print('rt_star: ', rht_startend)
+
         pts = np.append(pts, lt_wall, axis=0)
         pts = np.append(pts, rht_wall, axis=0)
         pts = np.append(pts, lt_startend, axis=0)
@@ -110,7 +118,12 @@ class VascularGenerator:
         return count
 
 
-if __name__ == "__main__":
-    vas_structure = VascularGenerator(num_of_nodes=3)
+    def print_images(self):
+        for j, s in enumerate(self.tri.simplices):
+            p = self.pts[s].mean(axis=0)
+            plt.text(p[0], p[1], 'Cell #%d' % j, ha='center') # label triangles
+        plt.triplot(self.pts[:,0], self.pts[:,1], self.tri.simplices)
+        plt.plot(self.pts[:,0], self.pts[:,1], 'o')
+        plt.savefig('Vasc_Graph.png')
 
-
+        plt.imsave('Vasc2D_img.png', self.img, cmap='Greys')
