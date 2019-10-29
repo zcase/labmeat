@@ -9,6 +9,8 @@ from bresenham import bresenham
 class VascularGenerator:
     def __init__(self, min_range=1, max_range=10, dim=2, num_of_nodes=20):
         # Create Wall start and end points
+        self.min_range = min_range
+        self.max_range = max_range
         self.left_wall_startend = np.array([[min_range, min_range], [min_range, max_range]])
         self.right_wall_startend = np.array([[max_range, min_range], [max_range, max_range]])
 
@@ -42,6 +44,27 @@ class VascularGenerator:
                     edges.append((pt, tri_pts[0]))
 
                 edges.append((tri_pts[i-1], pt))
+
+
+        topl_to_topR = (np.array([self.min_range, self.max_range]), np.array([self.max_range, self.max_range]))
+        btml_to_btmR = (np.array([self.min_range, self.min_range]), np.array([self.max_range, self.min_range]))
+        topl_to_topR_idx = None
+        btml_to_btmR_idx = None
+        for idx, edge in enumerate(edges):
+            # Removes the edge from top left bar to top right bar
+            if np.all(topl_to_topR[0] == edge[0]) and np.all(topl_to_topR[1] == edge[1]) or \
+               np.all(topl_to_topR[0] == edge[1]) and np.all(topl_to_topR[1] == edge[0]):
+                # print('    found Match: ', topl_to_topR, edge)
+                topl_to_topR_idx = idx
+
+            # Removes the edge from bottom left bar to bottom right bar
+            if np.all(btml_to_btmR[0] == edge[0]) and np.all(btml_to_btmR[1] == edge[1]) or \
+               np.all(btml_to_btmR[0] == edge[1]) and np.all(btml_to_btmR[1] == edge[0]):
+                # print('    found Match: ', btml_to_btmR, edge)
+                btml_to_btmR_idx = idx
+
+        del edges[topl_to_topR_idx]
+        del edges[btml_to_btmR_idx]
 
         return edges
 
