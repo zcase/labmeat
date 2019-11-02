@@ -1,13 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from collections import defaultdict 
 
-import networkx as nx
+
 from scipy.spatial import Delaunay
 from skimage.draw import line
 from bresenham import bresenham
 
+
 class VascularGenerator:
     def __init__(self, min_range=1, max_range=10, dim=2, num_of_nodes=20):
+        self.graph = defaultdict(list)
         # Create Wall start and end points
         self.min_range = min_range
         self.max_range = max_range
@@ -32,6 +35,45 @@ class VascularGenerator:
         self.img = self.convert_to_img2(self.edges, max_range)
 
 
+    def add_edge_to_graph(self, np_pt1, np_pt2):
+        # Compares the x values
+        if np_pt1[0] <= np_pt2[0]:
+            if not self.arreq_in_list(np_pt2, self.graph[tuple(np_pt1)]):
+                self.graph[tuple(np_pt1)].append(np_pt2)
+        else:
+            if not self.arreq_in_list(np_pt1, self.graph[tuple(np_pt2)]):
+                self.graph[tuple(np_pt2)].append(np_pt1)
+
+    def arreq_in_list(self, myarr, list_arrays):
+        # https://stackoverflow.com/questions/23979146/check-if-numpy-array-is-in-list-of-numpy-arrays
+        return next((True for elem in list_arrays if np.array_equal(elem, myarr)), False)
+
+    def arreq_in_list_wIdx(self, myarr, list_arrays):
+        return next((idx for idx, elem in enumerate(list_arrays) if np.array_equal(elem, myarr)), -1)
+
+    def create_pt_edge_dict(self, pts, edges):
+        for pt1, pt2 in edges:
+            # print('Pt1: ', pt1, '  Pt2: ', pt2)
+            self.add_edge_to_graph(pt1, pt2)
+
+    def depth_first_search(self):
+        # https://www.geeksforgeeks.org/depth-first-search-or-dfs-for-a-graph/
+        num_nodes = len(self.pts)
+        visted_nodes = [False] * num_nodes
+
+        for i in range(num_nodes):
+            if not visted_nodes[i]:
+                node = self.pts[i]
+                self.dfs_helper(i, node, visted_nodes)
+
+    def dfs_helper(self, node_idx, node, visted_nodes):
+        visted_nodes[node_idx] = True
+        print(node)
+
+        for i, node in enumerate(self.graph[tuple(node)]):
+            if not visted_nodes[node_idx]:
+                self.dfs_helper(i, node, visted_nodes)
+
     def generate_edges(self, tri, pts):
         edges = []
         for _, s in enumerate(tri.simplices):
@@ -41,33 +83,28 @@ class VascularGenerator:
                 if i == 0:
                     continue
                 elif pt[0] == tri_pts[-1][0] and pt[1] == tri_pts[-1][1]:
-                    edges.append((pt, tri_pts[0]))
+                    self.add_edge_to_graph(pt, tri_pts[0])
 
-                edges.append((tri_pts[i-1], pt))
-
+                self.add_edge_to_graph(tri_pts[i-1], pt)
 
         topl_to_topR = (np.array([self.min_range, self.max_range]), np.array([self.max_range, self.max_range]))
         btml_to_btmR = (np.array([self.min_range, self.min_range]), np.array([self.max_range, self.min_range]))
-        topl_to_topR_idx = None
-        btml_to_btmR_idx = None
-        for idx, edge in enumerate(edges):
-            # Removes the edge from top left bar to top right bar
-            if np.all(topl_to_topR[0] == edge[0]) and np.all(topl_to_topR[1] == edge[1]) or \
-               np.all(topl_to_topR[0] == edge[1]) and np.all(topl_to_topR[1] == edge[0]):
-                # print('    found Match: ', topl_to_topR, edge)
-                topl_to_topR_idx = idx
 
-            # Removes the edge from bottom left bar to bottom right bar
-            if np.all(btml_to_btmR[0] == edge[0]) and np.all(btml_to_btmR[1] == edge[1]) or \
-               np.all(btml_to_btmR[0] == edge[1]) and np.all(btml_to_btmR[1] == edge[0]):
-                # print('    found Match: ', btml_to_btmR, edge)
-                btml_to_btmR_idx = idx
+        for pt_pair in [topl_to_topR, btml_to_btmR]:
+            pt1, pt2 = pt_pair
+            if self.arreq_in_list(pt2, self.graph[tuple(pt1)]):
+                idx = self.arreq_in_list_wIdx(pt2, self.graph[tuple(pt1)])
+                del self.graph[tuple(pt1)][idx]
+            elif self.arreq_in_list(pt1, self.graph[tuple(pt2)]):
+                idx = self.arreq_in_list_wIdx(pt1, self.graph[tuple(pt2)])
+                del self.graph[tuple(pt1)][idx]
 
-        del edges[topl_to_topR_idx]
-        del edges[btml_to_btmR_idx]
+        edges = list()
+        for tuple_pt, np_pt_list in self.graph.items():
+            for np_pt in np_pt_list:
+                edges.append((np.asarray(tuple_pt), np_pt))
 
         return edges
-
 
     def convert_to_img2(self, edges, max_range):
         img = np.zeros((max_range+1, max_range+1), dtype=float)
@@ -132,6 +169,8 @@ class VascularGenerator:
         pts = np.append(pts, lt_startend, axis=0)
         pts = np.append(pts, rht_startend, axis=0)
 
+        pts = np.array(sorted(pts, key=lambda k: (-k[0], k[1]),  reverse=True))
+
         return pts
 
     def count_nodes(self, *argv):
@@ -150,3 +189,11 @@ class VascularGenerator:
         plt.savefig('Vasc_Graph.png')
 
         plt.imsave('Vasc2D_img.png', self.img, cmap='Greys')
+
+    def pretty(self, d, indent=0):
+        for key, value in d.items():
+            print('\t' * indent + str(key))
+            if isinstance(value, dict):
+                self.pretty(value, indent+1)
+            else:
+                print('\t' * (indent+1) + str(value))
