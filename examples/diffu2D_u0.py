@@ -1012,7 +1012,29 @@ def efficiency():
     return t, cpu
 
 if __name__ == '__main__':
-    test_quadratic()
+    # test_quadratic()
     #demo_classic_iterative(
     #    iteration='Jacobi', theta=0.5, tol=1E-4, Nx=20, Ny=20)
     # test_convergence_rate()
+
+    size = 100
+    globalInitialPoint = 50
+    def myI(x, y):
+        # print(x,y)
+        global globalInitialPoint
+        if(x==globalInitialPoint and y==globalInitialPoint):
+            return 255
+        else:
+            return 0
+    import matplotlib.pyplot as plt
+    def myAction(u, x, xv, y, yv, t, n):
+        global globalInitialPoint
+        plt.imsave('u_img{}.png'.format(n), u, cmap='Greys')
+        print(u[globalInitialPoint][globalInitialPoint])
+        # print('u:', u)
+        # print('x:', x)
+        # print('y:', y)
+        # print('t:', t)
+        print('n:',n)
+        print('-------------')
+    solver_sparse(myI, 1, None, size, size, size, size, .1, 4, user_action=myAction)
