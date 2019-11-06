@@ -123,6 +123,16 @@ class VascularGenerator:
         img = np.pad(np.rot90(img), (0,0), 'linear_ramp', end_values=(5, -4))
 
         return img
+    
+    def add_flows_to_img(self, flow_dict):
+        for pt_key, flow_val in flow_dict:
+            pt1, pt2 = pt_key
+            pt1 = np.asarray(pt1)
+            pt2 = np.asarray(pt2)
+            pts_on_line = np.array(list(bresenham(int(pt1[0]), int(pt1[1]), int(pt2[0]), int(pt2[1]))))
+            self.img[pts_on_line[:,0], pts_on_line[:,1]] = flow_val
+
+        return self.img
 
     # ====================== #
     # ==== Create Walls ==== #
