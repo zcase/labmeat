@@ -102,6 +102,14 @@ def computeFlow(vas_structure):
 
     print('\nSolved Variables:\n')
     printSolvedVariables(nodeOrderLookup, edgeOrderLookup, variables)
+
+
+    flowDict = defaultdict(int)
+    
+    for i, edge in enumerate(edgeOrderLookup):
+        flowDict[edge] = abs(variables[i+numNodes][0])
+
+    return flowDict
     
 def getLength(edge):
     pt1 = edge[0]

@@ -17,4 +17,8 @@ if __name__ == "__main__":
     for key in sorted(vas_structure.graph, key=lambda element: (-element[0], element[1]),  reverse=True):
         print('Key: ', key, '  : ', vas_structure.graph[key])
 
-    computeFlow(vas_structure)
+    flowDict = computeFlow(vas_structure)
+
+    print('\n\n\n')
+    for key in sorted(flowDict, key=lambda element: (element[0], element[1]),  reverse=True):
+        print('Key:', key, '   :  ', flowDict[key])
