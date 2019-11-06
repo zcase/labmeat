@@ -120,12 +120,12 @@ class VascularGenerator:
             img[int(pt1[0]), int(pt1[1])] = 2
             img[int(pt2[0]), int(pt2[1])] = 2
 
-        img = np.pad(np.rot90(img), (0,0), 'linear_ramp', end_values=(5, -4))
+        img = np.pad(img, (0,0), 'linear_ramp', end_values=(5, -4))
 
         return img
     
     def add_flows_to_img(self, flow_dict):
-        for pt_key, flow_val in flow_dict:
+        for pt_key, flow_val in flow_dict.items():
             pt1, pt2 = pt_key
             pt1 = np.asarray(pt1)
             pt2 = np.asarray(pt2)
@@ -201,7 +201,7 @@ class VascularGenerator:
         plt.plot(self.pts[:,0], self.pts[:,1], 'o')
         plt.savefig('Vasc_Graph.png')
 
-        plt.imsave('Vasc2D_img.png', self.img, cmap='Greys')
+        plt.imsave('Vasc2D_img.png', np.rot90(self.img), cmap='Greys')
 
     def pretty(self, d, indent=0):
         for key, value in d.items():

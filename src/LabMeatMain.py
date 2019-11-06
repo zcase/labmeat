@@ -22,3 +22,6 @@ if __name__ == "__main__":
     print('\n\n\n')
     for key in sorted(flowDict, key=lambda element: (element[0], element[1]),  reverse=True):
         print('Key:', key, '   :  ', flowDict[key])
+
+    vas_structure.add_flows_to_img(flowDict)
+    vas_structure.print_images()
