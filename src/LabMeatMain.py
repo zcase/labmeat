@@ -1,4 +1,6 @@
 from VascularGenerator import VascularGenerator
+from equations import *
+
 import numpy as np
 
 if __name__ == "__main__":
@@ -14,3 +16,5 @@ if __name__ == "__main__":
     # X is ascending, Y is decending
     for key in sorted(vas_structure.graph, key=lambda element: (-element[0], element[1]),  reverse=True):
         print('Key: ', key, '  : ', vas_structure.graph[key])
+
+    computeFlow(vas_structure)

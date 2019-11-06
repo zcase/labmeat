@@ -37,7 +37,10 @@ class VascularGenerator:
 
     def add_edge_to_graph(self, np_pt1, np_pt2):
         # Compares the x values
-        if np_pt1[0] <= np_pt2[0]:
+        if np_pt1[0] < np_pt2[0]:
+            if not self.arreq_in_list(np_pt2, self.graph[tuple(np_pt1)]):
+                self.graph[tuple(np_pt1)].append(np_pt2)
+        elif np_pt1[0] == np_pt2[0] and np_pt1[1] > np_pt2[1]:              # Added this to enforce bottom-right node as exit
             if not self.arreq_in_list(np_pt2, self.graph[tuple(np_pt1)]):
                 self.graph[tuple(np_pt1)].append(np_pt2)
         else:
@@ -129,7 +132,7 @@ class VascularGenerator:
         high_node_val = int(num_of_nodes / 5)
         num_left_nodes = 1
         num_right_nodes = 1
-        if high_node_val != 0:
+        if high_node_val > 1:
             num_left_nodes = np.random.randint(1, high=high_node_val)
             num_right_nodes = np.random.randint(1, high=high_node_val)
 
