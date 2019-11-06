@@ -101,11 +101,23 @@ def computeFlow(vas_structure):
     variables = np.linalg.solve(flowMatrix, answerMatrix)
 
     print('\nSolved Variables:\n')
-    for value in variables:
-        print(value)
+    printSolvedVariables(nodeOrderLookup, edgeOrderLookup, variables)
     
 def getLength(edge):
     pt1 = edge[0]
     pt2 = edge[1]
 
     return (((pt2[0]-pt1[0])**2)+((pt2[1]-pt1[1])**2))**0.5
+
+def printSolvedVariables(nodeLookup, edgeLookup, variables):
+    index = 0
+    for i, node in enumerate(nodeLookup):
+        print('P'+str(i+1)+':', variables[index], ' Node:', node)
+        index += 1
+    
+    for i, edge in enumerate(edgeLookup):
+        print('Q'+str(i+1)+':', variables[index], ' Edge:', edge)
+        index += 1
+
+    for i, edge in enumerate(edgeLookup):
+        print('𝝙P'+str(i+1)+':', variables[index], ' Edge:', edge)
