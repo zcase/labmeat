@@ -1,5 +1,6 @@
 from VascularGenerator import VascularGenerator
 from equations import *
+from diffu2D_u0 import lab_meat_diffuse
 
 import numpy as np
 
@@ -25,3 +26,5 @@ if __name__ == "__main__":
 
     vas_structure.add_flows_to_img(flowDict)
     vas_structure.print_images()
+
+    lab_meat_diffuse(vas_structure.img, 100, 0.5, 10)
