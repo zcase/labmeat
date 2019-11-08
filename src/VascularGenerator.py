@@ -11,6 +11,7 @@ from bresenham import bresenham
 class VascularGenerator:
     def __init__(self, min_range=1, max_range=10, dim=2, num_of_nodes=20):
         self.graph = defaultdict(list)
+        self.update_count = 0
         # Create Wall start and end points
         self.min_range = min_range
         self.max_range = max_range
@@ -21,9 +22,9 @@ class VascularGenerator:
         self.left_wall, self.right_wall = self.create_walls(min_range, max_range, num_of_nodes)
 
         # Generate random points
-        self.pts = self.generate_pts(min_range, max_range, num_of_nodes, dim,
-                                     self.left_wall, self.right_wall,
-                                     self.left_wall_startend, self.right_wall_startend)
+        self.pts, self.moveable_pts = self.generate_pts(min_range, max_range, num_of_nodes, dim,
+                                                        self.left_wall, self.right_wall,
+                                                        self.left_wall_startend, self.right_wall_startend)
 
         # Create the Planar graph using the Delaunay Method
         self.tri = Delaunay(self.pts)
@@ -131,6 +132,8 @@ class VascularGenerator:
             pt2 = np.asarray(pt2)
             pts_on_line = np.array(list(bresenham(int(pt1[0]), int(pt1[1]), int(pt2[0]), int(pt2[1]))))
             self.img[pts_on_line[:,0], pts_on_line[:,1]] = flow_val
+            self.img[int(pt1[0]), int(pt1[1])] = flow_val
+            self.img[int(pt2[0]), int(pt2[1])] = flow_val
 
         return self.img
 
@@ -174,8 +177,51 @@ class VascularGenerator:
         dist = np.linalg.norm(point - neighbor)
         return dist
 
+    def flatten_mvable_pts(self):
+
+        flattened_pts = sorted(self.moveable_pts, key=lambda k: (-k[0], k[1]),  reverse=True)
+        flattened_pts = np.hstack(flattened_pts)
+        # flattened_pts = ()
+        # for np_pt in list(sorted(self.moveable_pts, key=lambda k: (-k[0], k[1]),  reverse=True)):
+        #     flattened_pts += tuple(np_pt)
+
+        return flattened_pts
+
+
+    def update_moveable_pts(self, new_mvable_pts):
+        tuple_of_pts = ()
+        prev = None
+        cur = None
+        for i in range(2, len(new_mvable_pts)+2, 2):
+            cur  = new_mvable_pts[i-2:i]
+            if i > 2:
+                tuple_of_pts += (prev, cur)
+            prev = cur
+
+        new_mvable_pts = np.unique(np.vstack((tuple_of_pts)), axis=0)
+        pts = new_mvable_pts
+        pts = np.append(pts, self.left_wall, axis=0)
+        pts = np.append(pts, self.right_wall, axis=0)
+        pts = np.append(pts, self.left_wall_startend, axis=0)
+        pts = np.append(pts, self.right_wall_startend, axis=0)
+        pts = np.array(sorted(pts, key=lambda k: (-k[0], k[1]),  reverse=True))
+
+        # Update all points off of image
+        self.pts = pts
+
+        self.moveable_pts = new_mvable_pts
+        self.tri = Delaunay(self.pts)
+        self.graph = defaultdict(list)
+        self.edges = self.generate_edges(self.tri, self.pts)
+        self.img = None
+        self.img = self.convert_to_img2(self.edges, self.max_range)
+        self.update_count += 1
+        # self.print_images(graph_name='Vasc_Graph_' + str(self.update_count) + '.png', img_name='Vasc2D_img_' +str(self.update_count)+ '.png')
+
+
     def generate_pts(self, min_range, max_range, num_pts, dim, lt_wall, rht_wall, lt_startend, rht_startend):
         pts = np.random.uniform(low=min_range, high=max_range, size=(num_pts, dim))
+        moveable_pts = pts
 
         pts = np.append(pts, lt_wall, axis=0)
         pts = np.append(pts, rht_wall, axis=0)
@@ -184,7 +230,7 @@ class VascularGenerator:
 
         pts = np.array(sorted(pts, key=lambda k: (-k[0], k[1]),  reverse=True))
 
-        return pts
+        return pts, moveable_pts
 
     def count_nodes(self, *argv):
         count = 0
@@ -193,15 +239,34 @@ class VascularGenerator:
         return count
 
 
-    def print_images(self):
+    def print_images(self, graph_name='Vasc_Graph.png', img_name='Vasc2D_img.png'):
+        # fig = plt.figure()
         for j, s in enumerate(self.tri.simplices):
             p = self.pts[s].mean(axis=0)
             plt.text(p[0], p[1], 'Cell #%d' % j, ha='center') # label triangles
         plt.triplot(self.pts[:,0], self.pts[:,1], self.tri.simplices)
         plt.plot(self.pts[:,0], self.pts[:,1], 'o')
-        plt.savefig('Vasc_Graph.png')
+        plt.savefig(graph_name)
+        # fig.savefig(graph_name)
+        # plt.close(fig)
 
-        plt.imsave('Vasc2D_img.png', np.rot90(self.img), cmap='Greys')
+        # fig = plt.figure()
+        plt.imsave(img_name, np.rot90(self.img), cmap='gray_r')
+        # plt.close(fig)
+        # plt.clf()
+
+        # plt.imshow(self.img) 
+        # plt.savefig(img_name)
+        # plt.close(fig)
+
+        # im = Image.fromarray(np.rot90(self.img))
+        # if im.mode != 'RGB':
+        #     im = im.convert('RGB')
+        # im.save(img_name)
+
+        # im = Image.fromarray(np.rot90(self.img))
+        # im.save(img_name)
+
 
     def pretty(self, d, indent=0):
         for key, value in d.items():

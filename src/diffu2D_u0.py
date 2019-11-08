@@ -1025,7 +1025,7 @@ def lab_meat_diffuse(flowArray, size, dt, T):
         path_to_img_dir = 'diffusePngs/'
         if not os.path.exists(path_to_img_dir):
             os.makedirs(path_to_img_dir)
-        plt.imsave(path_to_img_dir + 'u_img{}.png'.format(n), u, cmap='Greys')
+        plt.imsave(path_to_img_dir + 'u_img{}.png'.format(n), np.rot90(u), cmap='Greys')
         # print('u:', u)
         print('n:',n)
         print('-------------')

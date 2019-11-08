@@ -58,6 +58,7 @@ def computeFlow(vas_structure):
 
     # Section 4 of matrix (Row for each node, besides first and last)
     for i, edge in enumerate(edgeOrderLookup):
+        print(edge)
         if (nodeOrderLookup.index(edge[0])) != 0:
             flowMatrix[currentRow+nodeOrderLookup.index(edge[0])][numNodes+i] = 1
         if (nodeOrderLookup.index(edge[1])) != numNodes-1:

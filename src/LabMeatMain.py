@@ -17,14 +17,33 @@ if __name__ == "__main__":
     # TODO: Make this (num_of_nodes) a command line argument
     vas_structure = VascularGenerator(max_range=100, num_of_nodes=3)
     vas_structure.print_images()
+    flattened_pts = vas_structure.flatten_mvable_pts()
+
+    print('Num Pts  : ', len(vas_structure.pts))
+    print('Num edges: ', len(vas_structure.edges))
+
+    # Update points
+    for i in range(0, len(flattened_pts), 2):
+        if flattened_pts[i] + 10 < vas_structure.max_range:
+            flattened_pts[i] = flattened_pts[i] + 10
+        else:
+            flattened_pts[i] += (vas_structure.max_range - 1) - flattened_pts[i]
+
+    print('Flattened_pts: ', flattened_pts)
+
+    print('Num edges: ', len(vas_structure.edges))
+    vas_structure.update_moveable_pts(flattened_pts)
+    print('Num edges: ', len(vas_structure.edges))
+    vas_structure.print_images(graph_name='Vasc_Graph_' + str(vas_structure.update_count) + '.png', img_name='Vasc2D_img_' +str(vas_structure.update_count)+ '.png')
+
+    print('Num Pts  : ', len(vas_structure.pts))
+    print('Num edges: ', len(vas_structure.edges))
+
+    
+
+    
     print('\n Depth First Search')
     vas_structure.depth_first_search()
-
-    # print('\nNum Nodes: ', len(vas_structure.pts))
-
-    # X is ascending, Y is decending
-    for key in sorted(vas_structure.graph, key=lambda element: (-element[0], element[1]),  reverse=True):
-        print('Key: ', key, '  : ', vas_structure.graph[key])
 
     flowDict = computeFlow(vas_structure)
 
@@ -33,7 +52,7 @@ if __name__ == "__main__":
         print('Key:', key, '   :  ', flowDict[key])
 
     vas_structure.add_flows_to_img(flowDict)
-    vas_structure.print_images()
+    # vas_structure.print_images()
 
     lab_meat_diffuse(vas_structure.img, 100, 0.5, 10)
 
