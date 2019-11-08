@@ -48,9 +48,12 @@ level (x and y are one-dimensional coordinate vectors).
 This function allows the calling code to plot the solution,
 compute errors, etc.
 """
+import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+import imageio
+from natsort import natsorted, ns
 
 def solver_dense(
     I, a, f, Lx, Ly, Nx, Ny, dt, T, theta=0.5,
@@ -1019,11 +1022,21 @@ def lab_meat_diffuse(flowArray, size, dt, T):
         return flowArray[int(x)][int(y)]
         
     def myAction(u, x, xv, y, yv, t, n):
-        plt.imsave('u_img{}.png'.format(n), u, cmap='Greys')
+        path_to_img_dir = 'diffusePngs/'
+        if not os.path.exists(path_to_img_dir):
+            os.makedirs(path_to_img_dir)
+        plt.imsave(path_to_img_dir + 'u_img{}.png'.format(n), u, cmap='Greys')
         # print('u:', u)
         print('n:',n)
         print('-------------')
     solver_classic_iterative(initialFromFlows, 1, None, size, size, size, size, dt, T, user_action=myAction)
+    path_to_img_dir = 'diffusePngs/'
+    images = []
+    for file_name in natsorted(os.listdir(path_to_img_dir), key=lambda y: y.lower()):
+        if file_name.endswith('.png'):
+            file_path = os.path.join(path_to_img_dir, file_name)
+            images.append(imageio.imread(file_path))
+    imageio.mimsave('VascDiffuse.gif', images, fps=5)
 
 if __name__ == '__main__':
     # test_quadratic()

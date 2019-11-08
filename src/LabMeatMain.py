@@ -2,7 +2,15 @@ from VascularGenerator import VascularGenerator
 from equations import *
 from diffu2D_u0 import lab_meat_diffuse
 
-import numpy as np
+# import numpy as np
+
+import autograd.numpy as np
+from autograd import grad
+from autograd.scipy.integrate import odeint
+from autograd.builtins import tuple
+from autograd.misc.optimizers import adam
+import autograd.numpy.random as npr
+
 
 if __name__ == "__main__":
 
@@ -28,3 +36,83 @@ if __name__ == "__main__":
     vas_structure.print_images()
 
     lab_meat_diffuse(vas_structure.img, 100, 0.5, 10)
+
+
+    # # # Generate data from true dynamics.
+    # # true_y0 = np.array([2., 0.]).T
+    # # t = np.linspace(0., max_T, N)
+    # # true_A = np.array([[-0.1, 2.0], [-2.0, -0.1]])
+    # # true_y = odeint(func, true_y0, t, args=(true_A,))
+
+    # def train_loss(params, iter):
+    #     return 1
+    #     # pred = ode_pred(params, true_y0, t)
+    #     # return L1_loss(pred, true_y)
+
+    # # Set up figure
+    # fig = plt.figure(figsize=(12, 4), facecolor='white')
+    # ax_traj     = fig.add_subplot(131, frameon=False)
+    # ax_phase    = fig.add_subplot(132, frameon=False)
+    # ax_vecfield = fig.add_subplot(133, frameon=False)
+    # plt.show(block=False)
+
+    # # Plots data and learned dynamics.
+    # def callback(params, iter, g):
+    #     pass
+
+    #     # # pred = ode_pred(params, true_y0, t)
+
+    #     # print("Iteration {:d} train loss {:.6f}".format(
+    #     #       iter, L1_loss(pred, true_y)))
+
+    #     # ax_traj.cla()
+    #     # ax_traj.set_title('Trajectories')
+    #     # ax_traj.set_xlabel('t')
+    #     # ax_traj.set_ylabel('x,y')
+    #     # ax_traj.plot(t, true_y[:, 0], '-', t, true_y[:, 1], 'g-')
+    #     # ax_traj.plot(t, pred[:, 0], '--', t, pred[:, 1], 'b--')
+    #     # ax_traj.set_xlim(t.min(), t.max())
+    #     # ax_traj.set_ylim(-2, 2)
+    #     # ax_traj.xaxis.set_ticklabels([])
+    #     # ax_traj.yaxis.set_ticklabels([])
+    #     # ax_traj.legend()
+
+    #     # ax_phase.cla()
+    #     # ax_phase.set_title('Phase Portrait')
+    #     # ax_phase.set_xlabel('x')
+    #     # ax_phase.set_ylabel('y')
+    #     # ax_phase.plot(true_y[:, 0], true_y[:, 1], 'g-')
+    #     # ax_phase.plot(pred[:, 0], pred[:, 1], 'b--')
+    #     # ax_phase.set_xlim(-2, 2)
+    #     # ax_phase.set_ylim(-2, 2)
+    #     # ax_phase.xaxis.set_ticklabels([])
+    #     # ax_phase.yaxis.set_ticklabels([])
+
+    #     # ax_vecfield.cla()
+    #     # ax_vecfield.set_title('Learned Vector Field')
+    #     # ax_vecfield.set_xlabel('x')
+    #     # ax_vecfield.set_ylabel('y')
+    #     # ax_vecfield.xaxis.set_ticklabels([])
+    #     # ax_vecfield.yaxis.set_ticklabels([])
+
+    #     # # vector field plot
+    #     # y, x = npo.mgrid[-2:2:21j, -2:2:21j]
+    #     # dydt = nn_predict(np.stack([x, y], -1).reshape(21 * 21, 2), 0,
+    #     #     params).reshape(-1, 2)
+    #     # mag = np.sqrt(dydt[:, 0]**2 + dydt[:, 1]**2).reshape(-1, 1)
+    #     # dydt = (dydt / mag)
+    #     # dydt = dydt.reshape(21, 21, 2)
+
+    #     # ax_vecfield.streamplot(x, y, dydt[:, :, 0], dydt[:, :, 1], color="black")
+    #     # ax_vecfield.set_xlim(-2, 2)
+    #     # ax_vecfield.set_ylim(-2, 2)
+
+    #     # fig.tight_layout()
+    #     # plt.draw()
+    #     # plt.pause(0.001)
+
+
+    # # Train neural net dynamics to match data.
+    # # init_params = init_nn_params(0.1, layer_sizes=[D, 150, D])
+    # # optimized_params = adam(grad(train_loss), init_params,
+    # #                         num_iters=1000, callback=callback)
