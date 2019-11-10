@@ -37,6 +37,11 @@ class VascularGenerator:
 
 
     def add_edge_to_graph(self, np_pt1, np_pt2):
+        # print('Adding To Graph: ', np_pt1, np_pt2)
+        if tuple(np_pt1) not in self.graph.keys():
+            self.graph[tuple(np_pt1)]
+        if tuple(np_pt2) not in self.graph.keys():
+            self.graph[tuple(np_pt2)]
         # Compares the x values
         if np_pt1[0] < np_pt2[0]:
             if not self.arreq_in_list(np_pt2, self.graph[tuple(np_pt1)]):
@@ -47,6 +52,7 @@ class VascularGenerator:
         else:
             if not self.arreq_in_list(np_pt1, self.graph[tuple(np_pt2)]):
                 self.graph[tuple(np_pt2)].append(np_pt1)
+
 
     def arreq_in_list(self, myarr, list_arrays):
         # https://stackoverflow.com/questions/23979146/check-if-numpy-array-is-in-list-of-numpy-arrays
@@ -120,8 +126,6 @@ class VascularGenerator:
             img[pts_on_line[:,0], pts_on_line[:,1]] = 1
             img[int(pt1[0]), int(pt1[1])] = 2
             img[int(pt2[0]), int(pt2[1])] = 2
-
-        img = np.pad(img, (0,0), 'linear_ramp', end_values=(5, -4))
 
         return img
     
@@ -250,23 +254,9 @@ class VascularGenerator:
         # fig.savefig(graph_name)
         # plt.close(fig)
 
-        # fig = plt.figure()
-        plt.imsave(img_name, np.rot90(self.img), cmap='gray_r')
-        # plt.close(fig)
-        # plt.clf()
-
-        # plt.imshow(self.img) 
-        # plt.savefig(img_name)
-        # plt.close(fig)
-
-        # im = Image.fromarray(np.rot90(self.img))
-        # if im.mode != 'RGB':
-        #     im = im.convert('RGB')
-        # im.save(img_name)
-
-        # im = Image.fromarray(np.rot90(self.img))
-        # im.save(img_name)
-
+        # https://stackoverflow.com/questions/38191855/zero-pad-numpy-array
+        img = np.pad(self.img, ((2, 3), (2, 3)), 'constant')
+        plt.imsave(img_name, np.rot90(img), cmap='gray_r')
 
     def pretty(self, d, indent=0):
         for key, value in d.items():
