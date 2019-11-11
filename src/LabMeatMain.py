@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 
 import imageio
 from natsort import natsorted, ns
+from sklearn.preprocessing import minmax_scale
 
 
 # import numpy as np
@@ -22,6 +23,9 @@ from timeit import default_timer as timer
 
 def sigmoid(x):
     return 1 / (1 + math.exp(-x))
+
+def gaussian(x):
+    return math.exp(-x**2)
 
 def get_submatrix_add(np_matrix, center_pt_tuple, convolution, submatrix_size=2):
     h, w = np_matrix.shape
@@ -112,7 +116,14 @@ def getSampleParameters():
 def loss_health(img):
     # 2D array of neutrient values
     # sum of sigmoid values (high N is low low, low N is high loss)
-    return
+    minmax_scale(img, copy=False)
+    total_loss = 0
+    for ix,iy in np.ndindex(img.shape):
+        loss = gaussian(img[ix,iy])
+        print(loss, ix, iy, img[ix,iy])
+        total_loss += loss
+
+    return total_loss
 
 def simulate(mvble_pts, t, vasc_structure):
     # Updtae Vascular Structure Movable Points
@@ -224,6 +235,7 @@ if __name__ == "__main__":
     vas_structure.print_images(img_name='TEST_simulate.png')
     print('DONE')
     print(vas_structure.img)
+    print("LOSS:", loss_health(vas_structure.img))
     os.sys.exit()
 
     def fitness(params, iter):
