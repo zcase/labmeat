@@ -605,7 +605,7 @@ def solver_classic_iterative(
 
     t1 = time.clock()
 
-    return t, t1-t0
+    return t, t1-t0, u_n
 
 def quadratic(theta, Nx, Ny):
     """Exact discrete solution of the scheme."""
@@ -1029,14 +1029,16 @@ def lab_meat_diffuse(flowArray, size, dt, T):
         # print('u:', u)
         print('n:',n)
         print('-------------')
-    solver_classic_iterative(initialFromFlows, 1, None, size, size, size, size, dt, T, user_action=myAction)
+    _, _, img = solver_classic_iterative(initialFromFlows, 1, None, size, size, size, size, dt, T, user_action=myAction)
     path_to_img_dir = 'diffusePngs/'
     images = []
     for file_name in natsorted(os.listdir(path_to_img_dir), key=lambda y: y.lower()):
         if file_name.endswith('.png'):
             file_path = os.path.join(path_to_img_dir, file_name)
             images.append(imageio.imread(file_path))
-    imageio.mimsave('VascDiffuse.gif', images, fps=5)
+    imageio.mimsave('VascDiffuse.gif', images, fps=3)
+
+    return img
 
 if __name__ == '__main__':
     # test_quadratic()

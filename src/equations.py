@@ -90,6 +90,7 @@ def computeFlow(vas_structure):
     # All values in matrix 'B' are zero, except for first row for pressure at first node ('initial' section)
     answerMatrix = np.zeros((matrixSize, 1))
     answerMatrix[0] = 1000
+    # answerMatrix[0] = 1
 
     print('\nNodes:\n')
     for node in nodeOrderLookup:
