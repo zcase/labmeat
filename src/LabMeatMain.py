@@ -52,16 +52,11 @@ def get_submatrix_add(np_matrix, center_pt_tuple, convolution, submatrix_size=2)
     elif col < 0 or col > w:
         print('Bad col dimension of ', col)
 
-    # new_h, new_w = np_matrix[row_start:row_end, col_start:col_end].shape
-    # conv_h, conv_w = convolution.shape
     conv_row_start = 0
     conv_row_end = 3
     conv_col_start = 0
     conv_col_end = 3
     new_convolution = None
-
-    # test =convolution[conv_row_start:conv_row_end, conv_col_start:conv_col_end]
-    # print('TEST: \n', test, '\n')
 
     if (orig_row - submatrix_size + 1) < 0:
         conv_row_start = 1
@@ -73,22 +68,10 @@ def get_submatrix_add(np_matrix, center_pt_tuple, convolution, submatrix_size=2)
     if (orig_col + submatrix_size) >= w:
         conv_col_end = 1
 
-
-    # print('tuple: ', center_pt_tuple)
-    # print('conv: \n', convolution)
-
-
     new_convolution = convolution[conv_row_start:conv_row_end, conv_col_start:conv_col_end]
-    # print('new_conv: \n', new_convolution)
-
-    # print('\nnew h: ', new_h, '   new_w: ', new_w)
-
     np_matrix[row_start:row_end, col_start:col_end] += new_convolution
 
     return np_matrix
-
-
-
 
 
 def adamMy(grad, lossFn, x, callback=None, num_iters=100,
@@ -150,21 +133,13 @@ def simulate(mvble_pts, t, vasc_structure):
 def diffusion(mvble_pts, img):
     # D is the defusion constant
     D = 0.1
-    # D = 4.0
-
-    print('\Img before diffusion: \n')
-    print(img)
-    print('\n# =============================== #\n')
 
     #https://programtalk.com/python-examples/autograd.scipy.signal.convolve/
-    for i in range(0, 100): # how many times you run a diffusion update
+    for i in range(0, 200): # how many times you run a diffusion update
         convolve = np.array([[1*D, 1*D, 1*D],[1*D,-8*D,1*D], [1*D, 1*D, 1*D]])
         deltaDiffusion = sig.convolve(img, convolve)[1:-1, 1:-1] #take off first and last
         if i > 0:
             deltaDiffusion += img
-        # print('\nDeltaDiffusion: \n')
-        # print(deltaDiffusion)
-        # print('\n# =============================== #\n')
 
         # the update to the img from one step of diffusion
         img = img + deltaDiffusion + nonlinearDiffusion(mvble_pts, img)
@@ -211,11 +186,8 @@ def nonlinearDiffusion(mvble_pts, img):
         X = -sigmoid(dist_0 - 1) - sigmoid(dist_1 - 1) - sigmoid(dist_2 - 1) - sigmoid(dist_3 - 1) - sigmoid(dist_5 - 1) - sigmoid(dist_6 - 1) - sigmoid(dist_7 - 1) - sigmoid(dist_8 - 1)
 
         convolution = np.array([[sigmoid(dist_0 - 1), sigmoid(dist_1 - 1), sigmoid(dist_2 - 1)], [sigmoid(dist_3 - 1), X, sigmoid(dist_5 - 1)], [sigmoid(dist_6 - 1), sigmoid(dist_7 - 1), sigmoid(dist_8 - 1)]])
-        # convolution = np.array([[sigmoid(dist_0 - 1), sigmoid(dist_1 - 1), sigmoid(dist_2 - 1)], [sigmoid(dist_3 - 1), sigmoid(dist_4 - 1), sigmoid(dist_5 - 1)], [sigmoid(dist_6 - 1), sigmoid(dist_7 - 1), sigmoid(dist_8 - 1)]])
-
         deltaDomain = get_submatrix_add(deltaDomain, (int_x, int_y), convolution)
 
-        # deltaDomain += sig.convolve(deltaDomain, convolution)[1:-1, 1:-1] #take off first and last
     return deltaDomain
 
 if __name__ == "__main__":
@@ -224,8 +196,12 @@ if __name__ == "__main__":
     all_params = []
     all_loss = []
 
-    for img_file in os.listdir('diffusePngs/'):
-        os.remove('diffusePngs/' + img_file)
+    path_to_diffuse_pngs = 'diffusePngs/'
+    if not os.path.exists(path_to_diffuse_pngs):
+        os.makedirs(path_to_diffuse_pngs)
+
+    for img_file in os.listdir(path_to_diffuse_pngs):
+        os.remove(path_to_diffuse_pngs + img_file)
 
     (max_T, count) = getSampleParameters()
     t = np.linspace(0., max_T, count)
@@ -239,10 +215,7 @@ if __name__ == "__main__":
     # print('\n Diffused: \n', diff_img)
 
 
-
-
-
-        # TODO: Make this (num_of_nodes) a command line argument
+    # TODO: Make this (num_of_nodes) a command line argument
     vas_structure = VascularGenerator(max_range=100, num_of_nodes=2)
     vas_structure.print_images()
     mvable_pts = tuple(vas_structure.flatten_mvable_pts())
@@ -251,78 +224,6 @@ if __name__ == "__main__":
     vas_structure.print_images(img_name='TEST_simulate.png')
     print('DONE')
     print(vas_structure.img)
-    
-
-    # flowDict = computeFlow(vas_structure)
-    # vas_structure.add_flows_to_img(flowDict)
-    # vas_structure.print_images(img_name='TEST_0.png')
-
-    # D = 0.1
-    # convolve = np.array([[1*D, 1*D, 1*D],[1*D,-8*D,1*D], [1*D, 1*D, 1*D]])
-    # deltaDiffusion = sig.convolve(vas_structure.img, convolve)[1:-1, 1:-1] #take off first and last
-    # print(convolve)
-    # print(deltaDiffusion)
-    # print(deltaDiffusion.shape)
-
-    # print('\n')
-    # print(mvable_pts)
-    # print('\n')
-
-    # w, h = vas_structure.img.shape
-    # deltaDomain_NonLinear = np.zeros((w, h))
-    # deltaDomain_NonLinear = deltaDomain_NonLinear.astype('float64')
-    # # d_0   d_1   d_2
-    # # d_3   d_4   d_5
-    # # d_6   d_7   d_8
-    # for i in range(1, len(mvable_pts), 2):
-    #     x = mvable_pts[i-1]
-    #     y = mvable_pts[i]
-    #     int_x = int(x)
-    #     int_y = int(y)
-        
-    #     np_pt = np.array([x, y])
-    #     int_np_pt = np.array([int_x, int_y])
-    #     dist_0 = np.linalg.norm(np_pt - np.array([int_x-1, int_y-1]))
-    #     dist_1 = np.linalg.norm(np_pt - np.array([int_x, int_y-1]))
-    #     dist_2 = np.linalg.norm(np_pt - np.array([int_x+1, int_y-1]))
-
-    #     dist_3 = np.linalg.norm(np_pt - np.array([int_x-1, int_y]))
-    #     dist_4 = np.linalg.norm(np_pt - np.array([int_x, int_y]))
-    #     dist_5 = np.linalg.norm(np_pt - np.array([int_x+1, int_y]))
-
-    #     dist_6 = np.linalg.norm(np_pt - np.array([int_x-1, int_y+1]))
-    #     dist_7 = np.linalg.norm(np_pt - np.array([int_x, int_y+1]))
-    #     dist_8 = np.linalg.norm(np_pt - np.array([int_x+1, int_y+1]))
-
-    #     X = -sigmoid(dist_0 - 1) - sigmoid(dist_1 - 1) - sigmoid(dist_2 - 1) - sigmoid(dist_3 - 1) - sigmoid(dist_5 - 1) - sigmoid(dist_6 - 1) - sigmoid(dist_7 - 1) - sigmoid(dist_8 - 1)
-
-    #     convolution = np.array([[sigmoid(dist_0 - 1), sigmoid(dist_1 - 1), sigmoid(dist_2 - 1)], [sigmoid(dist_3 - 1), X, sigmoid(dist_5 - 1)], [sigmoid(dist_6 - 1), sigmoid(dist_7 - 1), sigmoid(dist_8 - 1)]])
-
-
-
-    #     ## TODO(Zcase): workon adding the submatrix of NonLinear[x, y] + convoluation
-    #     # deltaDomain_NonLinear += sig.convolve(deltaDomain_NonLinear, convolution)[1:-1, 1:-1] #take off first and last
-    #     deltaDomain_NonLinear = get_submatrix_add(deltaDomain_NonLinear, (int_x, int_y), convolution)
-
-    #     print("convoluation:\n", convolution)
-    #     print('# =============== #')
-    #     print('DeltaDomain :\n', deltaDomain_NonLinear)
-    #     print('# =============== #')
-
-
-    #     dist_4 = np.linalg.norm(np_pt-int_np_pt)
-    #     print(np_pt, int_np_pt, dist_4)
-    
-
-
-    # vas_structure.img += deltaDiffusion + deltaDomain_NonLinear
-    # vas_structure.print_images(img_name='TEST.png')
-    # print(vas_structure.img)
-
-    # # mat_A = np.arange(100).reshape((10, 10))
-    # # mat_A = mat_A.astype('float64')
-    # # print('\n', mat_A, '\n')
-    # # print(get_submatrix_add(mat_A, (0,0), convolution))
     os.sys.exit()
 
     def fitness(params, iter):
@@ -344,108 +245,3 @@ if __name__ == "__main__":
     print(optimized_mvble_pts)
     end = timer()
     print('Time per iteration: ', str((end-start) / total_iterations))
-
-
-    # # Update points
-    # for i in range(0, len(flattened_pts), 2):
-    #     if flattened_pts[i] + 10 < vas_structure.max_range:
-    #         flattened_pts[i] = flattened_pts[i] + 10
-    #     else:
-    #         flattened_pts[i] += (vas_structure.max_range - 1) - flattened_pts[i]
-
-    # vas_structure.update_moveable_pts(flattened_pts)
-    # vas_structure.print_images(graph_name='Vasc_Graph_' + str(vas_structure.update_count) + '.png', img_name='Vasc2D_img_' +str(vas_structure.update_count)+ '.png')
-
-    # print('\n Depth First Search')
-    # vas_structure.depth_first_search()
-
-    # flowDict = computeFlow(vas_structure)
-
-    # print('\n\n\n')
-    # for key in sorted(flowDict, key=lambda element: (element[0], element[1]),  reverse=True):
-    #     print('Key:', key, '   :  ', flowDict[key])
-
-    # vas_structure.add_flows_to_img(flowDict)
-    # vas_structure.print_images()
-
-    # lab_meat_diffuse(vas_structure.img, 100, 0.5, 10)
-
-
-    # # # Generate data from true dynamics.
-    # # true_y0 = np.array([2., 0.]).T
-    # # t = np.linspace(0., max_T, N)
-    # # true_A = np.array([[-0.1, 2.0], [-2.0, -0.1]])
-    # # true_y = odeint(func, true_y0, t, args=(true_A,))
-
-    # def train_loss(params, iter):
-    #     return 1
-    #     # pred = ode_pred(params, true_y0, t)
-    #     # return L1_loss(pred, true_y)
-
-    # # Set up figure
-    # fig = plt.figure(figsize=(12, 4), facecolor='white')
-    # ax_traj     = fig.add_subplot(131, frameon=False)
-    # ax_phase    = fig.add_subplot(132, frameon=False)
-    # ax_vecfield = fig.add_subplot(133, frameon=False)
-    # plt.show(block=False)
-
-    # # Plots data and learned dynamics.
-    # def callback(params, iter, g):
-    #     pass
-
-    #     # # pred = ode_pred(params, true_y0, t)
-
-    #     # print("Iteration {:d} train loss {:.6f}".format(
-    #     #       iter, L1_loss(pred, true_y)))
-
-    #     # ax_traj.cla()
-    #     # ax_traj.set_title('Trajectories')
-    #     # ax_traj.set_xlabel('t')
-    #     # ax_traj.set_ylabel('x,y')
-    #     # ax_traj.plot(t, true_y[:, 0], '-', t, true_y[:, 1], 'g-')
-    #     # ax_traj.plot(t, pred[:, 0], '--', t, pred[:, 1], 'b--')
-    #     # ax_traj.set_xlim(t.min(), t.max())
-    #     # ax_traj.set_ylim(-2, 2)
-    #     # ax_traj.xaxis.set_ticklabels([])
-    #     # ax_traj.yaxis.set_ticklabels([])
-    #     # ax_traj.legend()
-
-    #     # ax_phase.cla()
-    #     # ax_phase.set_title('Phase Portrait')
-    #     # ax_phase.set_xlabel('x')
-    #     # ax_phase.set_ylabel('y')
-    #     # ax_phase.plot(true_y[:, 0], true_y[:, 1], 'g-')
-    #     # ax_phase.plot(pred[:, 0], pred[:, 1], 'b--')
-    #     # ax_phase.set_xlim(-2, 2)
-    #     # ax_phase.set_ylim(-2, 2)
-    #     # ax_phase.xaxis.set_ticklabels([])
-    #     # ax_phase.yaxis.set_ticklabels([])
-
-    #     # ax_vecfield.cla()
-    #     # ax_vecfield.set_title('Learned Vector Field')
-    #     # ax_vecfield.set_xlabel('x')
-    #     # ax_vecfield.set_ylabel('y')
-    #     # ax_vecfield.xaxis.set_ticklabels([])
-    #     # ax_vecfield.yaxis.set_ticklabels([])
-
-    #     # # vector field plot
-    #     # y, x = npo.mgrid[-2:2:21j, -2:2:21j]
-    #     # dydt = nn_predict(np.stack([x, y], -1).reshape(21 * 21, 2), 0,
-    #     #     params).reshape(-1, 2)
-    #     # mag = np.sqrt(dydt[:, 0]**2 + dydt[:, 1]**2).reshape(-1, 1)
-    #     # dydt = (dydt / mag)
-    #     # dydt = dydt.reshape(21, 21, 2)
-
-    #     # ax_vecfield.streamplot(x, y, dydt[:, :, 0], dydt[:, :, 1], color="black")
-    #     # ax_vecfield.set_xlim(-2, 2)
-    #     # ax_vecfield.set_ylim(-2, 2)
-
-    #     # fig.tight_layout()
-    #     # plt.draw()
-    #     # plt.pause(0.001)
-
-
-    # # Train neural net dynamics to match data.
-    # # init_params = init_nn_params(0.1, layer_sizes=[D, 150, D])
-    # # optimized_params = adam(grad(train_loss), init_params,
-    # #                         num_iters=1000, callback=callback)
