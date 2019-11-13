@@ -91,9 +91,6 @@ def random_walk():
 
 
 
-
-
-
 def get_submatrix_add(np_matrix, center_pt_tuple, convolution, submatrix_size=2):
     h, w = np_matrix.shape
     orig_row, orig_col = center_pt_tuple
@@ -139,47 +136,23 @@ def get_submatrix_add(np_matrix, center_pt_tuple, convolution, submatrix_size=2)
     if (orig_col + submatrix_size) >= w:
         conv_col_end = 1
 
-    new_convolution = convolution[conv_row_start:conv_row_end, conv_col_start:conv_col_end]
-    np_matrix[row_start:row_end, col_start:col_end] += new_convolution
+    new_convolution = np.array(convolution[conv_row_start:conv_row_end, conv_col_start:conv_col_end])
+    # np_matrix[row_start:row_end, col_start:col_end] += new_convolution
+    new_matrix = []
+    for row_idx, row in enumerate(np_matrix):
+        count = 0
+        if row_idx >= row_start and row_idx < row_end and count < conv_col_end:
+            val2 = list(new_convolution[conv_col_start + count])
+            updated_lst_vals = [sum(x) for x in zip(row[col_start:col_end], val2)]
+            row[col_start:col_end] = updated_lst_vals # list assignment not np.array assignment
+            count += 1
 
-    return np_matrix
+        new_matrix.append(row)
+    
+    new_matrix = np.array(new_matrix)
 
-def adamMy(grad, lossFn, x, callback=None, num_iters=100,
-         step_size=0.001, b1=0.9, b2=0.999, eps=10**-8):
-    """Adam as described in http://arxiv.org/pdf/1412.6980.pdf.
-    It's basically RMSprop with momentum and some correction terms."""
-    m = np.zeros(len(x))
-    v = np.zeros(len(x))
-    m = np.full((len(x),), 0.001)
-    loss0 = 0
-    changeStepSize = 0.01
-    for i in range(0, num_iters):
-        loss1 = lossFn(x,i)
-        lossChange = abs(loss0-loss1)
-        if lossChange < 0.01:
-            step_size = 0.009
-        # if lossChange < 0.008:
-        #     step_size = 0.015
-        g = grad(x,i)
-        #g = np.minimum(g, m)
-        print("in ADAM Dloss = %.4f, step size = %.4f" % (lossChange, step_size))
-        #print(loss)
-        #print(x)
-        if callback: 
-            callback(x, i, g)
-        print(b1)
-        print(g)
-        print(type(g))
-        print((1 - b1) * g)
-        print(m)
-        print(type(m))
-        
-        m = (1 - b1) * g      + b1 * m  # First  moment estimate.
-        v = (1 - b2) * (g**2) + b2 * v  # Second moment estimate.
-        mhat = m / (1 - b1**(i + 1))    # Bias correction.
-        vhat = v / (1 - b2**(i + 1))
-        x = x - step_size*mhat/(np.sqrt(vhat) + eps)
-    return x
+    return new_matrix
+
 
 def getSampleParameters():
     # how many iterations to run the ODE for one trajectory, and the time step
@@ -189,7 +162,7 @@ def getSampleParameters():
 def loss_health(img):
     # 2D array of neutrient values
     # sum of sigmoid values (high N is low low, low N is high loss)
-    newimg = minmax_scale(img)
+    newimg = np.array(minmax_scale(np.array(img)))
     total_loss = 0
     for ix,iy in np.ndindex(newimg.shape):
         loss = gaussian(newimg[ix,iy])
@@ -232,10 +205,10 @@ def diffusion(mvble_pts, img):
         convolve = np.array([[1*D, 1*D, 1*D],[1*D,-8*D,1*D], [1*D, 1*D, 1*D]])
         deltaDiffusion = sig.convolve(img, convolve)[1:-1, 1:-1] #take off first and last
         # if i > 0:
-        deltaDiffusion += img
+        deltaDiffusion += np.array(img)
 
         # the update to the img from one step of diffusion
-        img = img + deltaDiffusion + nonlinearDiffusion(mvble_pts, img)
+        img = np.array(img + deltaDiffusion + nonlinearDiffusion(mvble_pts, img))
         img_pic = np.pad(img, ((2, 3), (2, 3)), 'constant')
         plt.imsave('diffusePngs/TestDiffuse_'+str(i)+'.png', np.rot90(img_pic), cmap='jet')
 
@@ -254,8 +227,8 @@ def diffusion(mvble_pts, img):
 def nonlinearDiffusion(mvble_pts, img):
     #http://greg-ashton.physics.monash.edu/applying-python-functions-in-moving-windows.html
     #https://stackoverflow.com/questions/12816293/vectorize-this-convolution-type-loop-more-efficiently-in-numpy
-    w, h = img.shape
-    deltaDomain = np.zeros((w, h))
+    h, w = img.shape
+    deltaDomain = np.zeros((h, w))
     for i in range(1, len(mvble_pts), 2):
         x = mvble_pts[i-1]
         y = mvble_pts[i]
@@ -319,7 +292,43 @@ if __name__ == "__main__":
 
     # test = np.zeros((11, 11))
     # test[5][5] = 255
-    # diffused_test = diffusion((5,5), test)
+    # t = np.array(test)
+    # # diffused_test = diffusion((5,5), test)
+    # for t in te:
+    #     print(t)
+    # print(te)
+    # res = np.array([np.linalg.norm(th) for th in te])
+    # print(te.shape[0])
+    # test = np.arange(100.0).reshape(10,10)
+    new_convolution = np.ones((3,3)) * 100
+    # row_start = 4
+    # row_end = 7
+
+
+    # col_start = 4
+    # col_end = 7
+
+    # print(new_convolution[1, 1:3])
+
+    # new_matrix = []
+    # for row_idx, row in enumerate(test):
+    #     row = list(row)
+    #     if row_idx >= row_start and row_idx < row_end:
+    #         val2 = list(new_convolution[(row_idx-len(new_convolution)) - 1])
+    #         updated_lst_vals = [sum(x) for x in zip(row[col_start:col_end], val2)]
+    #         row[col_start:col_end] = updated_lst_vals
+
+    #     new_matrix.append(row)
+    
+    # new_matrix = np.array(new_matrix)
+
+    # deltaDomain = np.arange(100.0).reshape(10,10)
+
+    # print(deltaDomain)
+    # deltaDomain = get_submatrix_add(deltaDomain, (0,0), new_convolution)
+    # print('\n')
+    # print(deltaDomain)
+
     # os.sys.exit()
 
 

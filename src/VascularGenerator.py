@@ -134,12 +134,14 @@ class VascularGenerator:
                 img[pts_on_line[:,0], pts_on_line[:,1]] = 1
                 img[int(pt1[0]._value), int(pt1[1]._value)] = 2
                 img[int(pt2[0]._value), int(pt2[1]._value)] = 2
+                img = np.array(img)
             else:
                 pts_on_line = np.array(list(bresenham(int(pt1[0]), int(pt1[1]), int(pt2[0]), int(pt2[1]))))
 
                 img[pts_on_line[:,0], pts_on_line[:,1]] = 1
                 img[int(pt1[0]), int(pt1[1])] = 2
                 img[int(pt2[0]), int(pt2[1])] = 2
+                img = np.array(img)
 
             # pts_on_line = np.array(list(bresenham(int(pt1[0]), int(pt1[1]), int(pt2[0]), int(pt2[1]))))
 
@@ -158,6 +160,9 @@ class VascularGenerator:
             self.img[pts_on_line[:,0], pts_on_line[:,1]] = flow_val
             self.img[int(pt1[0]), int(pt1[1])] = flow_val
             self.img[int(pt2[0]), int(pt2[1])] = flow_val
+            # print(self.img)
+            # print('\n\n')
+        self.img = np.array(self.img)
 
         return self.img
 

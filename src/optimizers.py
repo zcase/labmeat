@@ -60,6 +60,7 @@ def adam(grad, x,  callback=None, num_iters=100,
     m = np.zeros(len(x))
     v = np.zeros(len(x))
     print('X = ', x)
+
     for i in range(0, num_iters):
         g = grad(x,i)
         print('        ', i, g)
@@ -69,5 +70,10 @@ def adam(grad, x,  callback=None, num_iters=100,
         v = (1 - b2) * (g**2) + b2 * v  # Second moment estimate.
         mhat = m / (1 - b1**(i + 1))    # Bias correction.
         vhat = v / (1 - b2**(i + 1))
+        print('    m= ', m)
+        print('    m= ', v)
+        print('    m= ', mhat)
+        print('    m= ', vhat)
         x = x - step_size*mhat/(np.sqrt(vhat) + eps)
+        print('    x= ', x)
     return x
