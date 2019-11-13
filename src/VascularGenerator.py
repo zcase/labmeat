@@ -1,8 +1,7 @@
-import numpy as np
+# import numpy as np
+import autograd.numpy as np
 import matplotlib.pyplot as plt
 from collections import defaultdict 
-
-
 from scipy.spatial import Delaunay
 from skimage.draw import line
 from bresenham import bresenham
@@ -37,6 +36,9 @@ class VascularGenerator:
 
 
     def add_edge_to_graph(self, np_pt1, np_pt2):
+        if type(np_pt1) != type(np.array((2,4))):
+            np_pt1 = np_pt1._value
+            np_pt2 = np_pt2._value
         # print('Adding To Graph: ', np_pt1, np_pt2)
         if tuple(np_pt1) not in self.graph.keys():
             self.graph[tuple(np_pt1)]
@@ -121,11 +123,29 @@ class VascularGenerator:
 
         for edge in edges:
             pt1, pt2 = edge
-            pts_on_line = np.array(list(bresenham(int(pt1[0]), int(pt1[1]), int(pt2[0]), int(pt2[1]))))
+            # print(pt1)
+            # print(pt1[0])
+            # print(type(pt1))
+            # print(type(pt1[0]))
+            # if pt
+            if type(pt1[0]) != type(np.array((2, 4))) and (type(pt1[0]) != np.float64):
+                # print('HERE', pt1[0]._value)
+                pts_on_line = np.array(list(bresenham(int(pt1[0]._value), int(pt1[1]._value), int(pt2[0]._value), int(pt2[1]._value))))
+                img[pts_on_line[:,0], pts_on_line[:,1]] = 1
+                img[int(pt1[0]._value), int(pt1[1]._value)] = 2
+                img[int(pt2[0]._value), int(pt2[1]._value)] = 2
+            else:
+                pts_on_line = np.array(list(bresenham(int(pt1[0]), int(pt1[1]), int(pt2[0]), int(pt2[1]))))
 
-            img[pts_on_line[:,0], pts_on_line[:,1]] = 1
-            img[int(pt1[0]), int(pt1[1])] = 2
-            img[int(pt2[0]), int(pt2[1])] = 2
+                img[pts_on_line[:,0], pts_on_line[:,1]] = 1
+                img[int(pt1[0]), int(pt1[1])] = 2
+                img[int(pt2[0]), int(pt2[1])] = 2
+
+            # pts_on_line = np.array(list(bresenham(int(pt1[0]), int(pt1[1]), int(pt2[0]), int(pt2[1]))))
+
+            # img[pts_on_line[:,0], pts_on_line[:,1]] = 1
+            # img[int(pt1[0]), int(pt1[1])] = 2
+            # img[int(pt2[0]), int(pt2[1])] = 2
 
         return img
     
@@ -202,20 +222,37 @@ class VascularGenerator:
                 tuple_of_pts += (prev, cur)
             prev = cur
 
-        new_mvable_pts = np.unique(np.vstack((tuple_of_pts)), axis=0)
-        pts = new_mvable_pts
+        # print('tup of pts: ', tuple_of_pts)
+        # print('np.vstack: ', np.vstack((tuple_of_pts)))
+        # print('test  :\n', np.vstack({tuple(row) for row in tuple_of_pts}))
+        # val = np.vstack((tuple_of_pts))
+        self.moveable_pts = np.vstack((tuple_of_pts))
+        # new_mvable_pts = np.unique(val, axis=0)
+        # new_mvable_pts = val
+        # pts = new_mvable_pts
+        pts = self.moveable_pts
         pts = np.append(pts, self.left_wall, axis=0)
         pts = np.append(pts, self.right_wall, axis=0)
         pts = np.append(pts, self.left_wall_startend, axis=0)
         pts = np.append(pts, self.right_wall_startend, axis=0)
-        pts = np.array(sorted(pts, key=lambda k: (-k[0], k[1]),  reverse=True))
+        self.pts = np.array(sorted(pts, key=lambda k: (-k[0], k[1]),  reverse=True))
 
         # Update all points off of image
-        self.pts = pts
+        # self.pts = pts
 
-        self.moveable_pts = new_mvable_pts
-        self.tri = Delaunay(self.pts)
         self.graph = defaultdict(list)
+        # self.moveable_pts = new_mvable_pts
+        # print('pts: \n', self.pts)
+        # print(type(self.pts), str(type(self.pts)), type(np.array((2, 4))))
+        if type(self.pts) != type(np.array((2, 4))):
+            # print(self.pts._value)
+            self.tri = Delaunay(self.pts._value)
+        else:
+            self.tri = Delaunay(self.pts)
+
+        # self.tri = Delaunay(self.pts)
+
+
         self.edges = self.generate_edges(self.tri, self.pts)
         self.img = None
         self.img = self.convert_to_img2(self.edges, self.max_range)
@@ -244,19 +281,19 @@ class VascularGenerator:
 
 
     def print_images(self, graph_name='Vasc_Graph.png', img_name='Vasc2D_img.png'):
-        # fig = plt.figure()
+        fig = plt.figure()
         for j, s in enumerate(self.tri.simplices):
             p = self.pts[s].mean(axis=0)
             plt.text(p[0], p[1], 'Cell #%d' % j, ha='center') # label triangles
         plt.triplot(self.pts[:,0], self.pts[:,1], self.tri.simplices)
         plt.plot(self.pts[:,0], self.pts[:,1], 'o')
-        plt.savefig(graph_name)
-        # fig.savefig(graph_name)
-        # plt.close(fig)
+        # plt.savefig(graph_name)
+        fig.savefig(graph_name)
+        plt.close(fig)
 
         # https://stackoverflow.com/questions/38191855/zero-pad-numpy-array
         img = np.pad(self.img, ((2, 3), (2, 3)), 'constant')
-        plt.imsave(img_name, np.rot90(img), cmap='gray_r')
+        plt.imsave(img_name, np.rot90(img), cmap='jet')
 
     def pretty(self, d, indent=0):
         for key, value in d.items():

@@ -25,7 +25,8 @@
 from VascularGenerator import VascularGenerator
 
 import math
-import numpy as np
+# import numpy as np
+import autograd.numpy as np
 from collections import defaultdict 
 
 
@@ -46,7 +47,26 @@ def computeFlow(vas_structure):
     for i, key in enumerate(sorted(vas_structure.graph, key=lambda element: (-element[0], element[1]),  reverse=True)):
         nodeOrderLookup.append(key)
         for connection in vas_structure.graph[key]:
-            edgeOrderLookup.append((key, (connection.tolist()[0], connection.tolist()[1])))
+            # print('# ==================== #')
+            # print('# ==== CONNECTION ==== #\n')
+            # print(connection)
+            # print(type(connection))
+            if type(connection) != type(np.array((2, 4))):
+                # print(connection[0]._value)
+                # print(connection._value)
+                # print(tuple(connection._value))
+                # print(key)
+                t, tt = key
+                # print(t, tt)
+                tx = t._value
+                ty = tt._value
+                # print(tx, ty)
+
+                edgeOrderLookup.append(((tx, ty), (connection[0]._value, connection[1]._value)))
+            else:
+                edgeOrderLookup.append((key, (connection.tolist()[0], connection.tolist()[1])))
+            
+            # edgeOrderLookup.append((key, (connection.tolist()[0], connection.tolist()[1])))
 
 
      # Initial section of matrix (2 rows)
@@ -57,8 +77,15 @@ def computeFlow(vas_structure):
     currentRow = 1
 
     # Section 4 of matrix (Row for each node, besides first and last)
+    # print(flowMatrix)
+    # print(flowMatrix.shape)
     for i, edge in enumerate(edgeOrderLookup):
-        print(edge)
+        # print('\n\nEDGE: ', edge)
+        # print('EDGE[0] : ', edge[0])
+        # print('EDGE[1] : ', edge[1])
+        # print('NumNodes: ', numNodes)
+        # print('NumEdges: ', numEdges)
+        # print('currentRow+nodeOrderLookup.index(edge[1]): ', currentRow+nodeOrderLookup.index(edge[1]), '\n\n')
         if (nodeOrderLookup.index(edge[0])) != 0:
             flowMatrix[currentRow+nodeOrderLookup.index(edge[0])][numNodes+i] = 1
         if (nodeOrderLookup.index(edge[1])) != numNodes-1:
@@ -92,18 +119,18 @@ def computeFlow(vas_structure):
     answerMatrix[0] = 1000
     # answerMatrix[0] = 1
 
-    print('\nNodes:\n')
-    for node in nodeOrderLookup:
-        print(node)
+    # print('\nNodes:\n')
+    # for node in nodeOrderLookup:
+    #     print(node)
 
-    print('\nEdges:\n')
-    for edge in edgeOrderLookup:
-        print(edge)
+    # print('\nEdges:\n')
+    # for edge in edgeOrderLookup:
+    #     print(edge)
 
     variables = np.linalg.solve(flowMatrix, answerMatrix)
 
-    print('\nSolved Variables:\n')
-    printSolvedVariables(nodeOrderLookup, edgeOrderLookup, variables)
+    # print('\nSolved Variables:\n')
+    # printSolvedVariables(nodeOrderLookup, edgeOrderLookup, variables)
 
 
     flowDict = defaultdict(int)

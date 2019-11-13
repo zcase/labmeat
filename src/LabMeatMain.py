@@ -9,6 +9,8 @@ import imageio
 from natsort import natsorted, ns
 from sklearn.preprocessing import minmax_scale
 
+from optimizers import adam as AdamTwo
+
 
 # import numpy as np
 
@@ -26,6 +28,67 @@ def sigmoid(x):
 
 def gaussian(x):
     return math.exp(-x**2)
+
+def random_walk():
+    vas_structure = VascularGenerator(max_range=100, num_of_nodes=2)
+    vas_structure.print_images(graph_name='AutoGrad_startGraph.png', img_name='AutoGrad_startImg.png')
+    mvable_pts = tuple(vas_structure.flatten_mvable_pts())
+    print(mvable_pts)
+
+    test_movement = np.array([-30, -20, -10, 0, 10, 20, 30])
+
+    loss_lst = []
+    time_lst = []
+    for i in range(51):
+        vas_structure.img = simulate(mvable_pts, i, vas_structure)
+        vas_structure.print_images(graph_name=sim_graph_folder+'test_graph'+str(i)+'.png', img_name=sim_img_folder+'test_img'+str(i)+'.png')
+        # print(vas_structure.img)
+        loss = loss_health(vas_structure.img)
+        loss_lst.append(loss)
+        time_lst.append(i)
+        print(i, 'LOSS:', loss)
+
+        index = np.random.choice(vas_structure.moveable_pts.shape[0], 1, replace=False)
+        inc_index_x = np.random.choice(test_movement, 1, replace=False)
+        inc_index_y = np.random.choice(test_movement, 1, replace=False)
+
+        test_x = vas_structure.moveable_pts[index][0][0] + inc_index_x[0]
+        test_y = vas_structure.moveable_pts[index][0][1] + inc_index_y[0]
+
+        if test_x < 0:
+            test_x = 0
+        if test_x > 100:
+            test_x = 100
+
+        if test_y < 0:
+            test_y = 0
+        if test_y > 100:
+            test_y = 100
+
+        vas_structure.moveable_pts[index] = [test_x, test_y]
+        mvable_pts = tuple(vas_structure.flatten_mvable_pts())
+
+
+    # colors = ("red", "green", "blue")
+    fig = plt.figure()
+    plt.scatter(time_lst, loss_lst, alpha=0.5)
+    plt.title('Loss Over Time')
+    plt.xlabel('Time', fontsize=18)
+    plt.ylabel('Loss', fontsize=16)
+    fig.savefig('LossGraph.png')
+
+    images = []
+    for file_name in natsorted(os.listdir(sim_img_folder), key=lambda y: y.lower()):
+        if file_name.endswith('.png'):
+            file_path = os.path.join(sim_img_folder, file_name)
+            images.append(imageio.imread(file_path))
+    imageio.mimsave('Vasc_Random_Walk.gif', images, fps=50)
+    os.sys.exit()
+
+
+
+
+
 
 def get_submatrix_add(np_matrix, center_pt_tuple, convolution, submatrix_size=2):
     h, w = np_matrix.shape
@@ -77,7 +140,6 @@ def get_submatrix_add(np_matrix, center_pt_tuple, convolution, submatrix_size=2)
 
     return np_matrix
 
-
 def adamMy(grad, lossFn, x, callback=None, num_iters=100,
          step_size=0.001, b1=0.9, b2=0.999, eps=10**-8):
     """Adam as described in http://arxiv.org/pdf/1412.6980.pdf.
@@ -101,6 +163,13 @@ def adamMy(grad, lossFn, x, callback=None, num_iters=100,
         #print(x)
         if callback: 
             callback(x, i, g)
+        print(b1)
+        print(g)
+        print(type(g))
+        print((1 - b1) * g)
+        print(m)
+        print(type(m))
+        
         m = (1 - b1) * g      + b1 * m  # First  moment estimate.
         v = (1 - b2) * (g**2) + b2 * v  # Second moment estimate.
         mhat = m / (1 - b1**(i + 1))    # Bias correction.
@@ -116,11 +185,10 @@ def getSampleParameters():
 def loss_health(img):
     # 2D array of neutrient values
     # sum of sigmoid values (high N is low low, low N is high loss)
-    minmax_scale(img, copy=False)
+    newimg = minmax_scale(img)
     total_loss = 0
-    for ix,iy in np.ndindex(img.shape):
-        loss = gaussian(img[ix,iy])
-        print(loss, ix, iy, img[ix,iy])
+    for ix,iy in np.ndindex(newimg.shape):
+        loss = gaussian(newimg[ix,iy])
         total_loss += loss
 
     return total_loss
@@ -129,11 +197,21 @@ def simulate(mvble_pts, t, vasc_structure):
     # Updtae Vascular Structure Movable Points
     vasc_structure.update_moveable_pts(mvble_pts)
 
+    sim_img_folder = 'simulation_imgs/imgs/'
+    sim_graph_folder = 'simulation_imgs/graphs/'
+    if not os.path.exists(sim_img_folder):
+        os.makedirs(sim_img_folder)
+    if not os.path.exists(sim_graph_folder):
+        os.makedirs(sim_graph_folder)
+
     # Solve for flow
     flowDict = computeFlow(vasc_structure)
 
     # Add flows to image
     vasc_structure.add_flows_to_img(flowDict)
+
+    # vasc_structure.print_images(graph_name=sim_graph_folder + 'sim_graph_'+str(t)+'.png',
+    #                             img_name=sim_img_folder + 'sim_img_'+str(t)+'.png')
 
     # run the diffusion
     # diffused_img = lab_meat_diffuse(vas_structure.img, 100, 1, 50)
@@ -143,14 +221,14 @@ def simulate(mvble_pts, t, vasc_structure):
 
 def diffusion(mvble_pts, img):
     # D is the defusion constant
-    D = 0.1
+    D = .225
 
     #https://programtalk.com/python-examples/autograd.scipy.signal.convolve/
-    for i in range(0, 200): # how many times you run a diffusion update
+    for i in range(0, 20): # how many times you run a diffusion update
         convolve = np.array([[1*D, 1*D, 1*D],[1*D,-8*D,1*D], [1*D, 1*D, 1*D]])
         deltaDiffusion = sig.convolve(img, convolve)[1:-1, 1:-1] #take off first and last
-        if i > 0:
-            deltaDiffusion += img
+        # if i > 0:
+        deltaDiffusion += img
 
         # the update to the img from one step of diffusion
         img = img + deltaDiffusion + nonlinearDiffusion(mvble_pts, img)
@@ -163,7 +241,7 @@ def diffusion(mvble_pts, img):
         if file_name.endswith('.png'):
             file_path = os.path.join(path_to_img_dir, file_name)
             images.append(imageio.imread(file_path))
-    imageio.mimsave('VascDiffuse.gif', images, fps=50)
+    imageio.mimsave('VascDiffuse.gif', images, fps=5)
 
     return img
 
@@ -177,6 +255,10 @@ def nonlinearDiffusion(mvble_pts, img):
     for i in range(1, len(mvble_pts), 2):
         x = mvble_pts[i-1]
         y = mvble_pts[i]
+        # print(type(x), type(1))
+        if type(x) != np.float64 and type(x) != type(1):
+            x = x._value
+            y = y._value
         int_x = int(x)
         int_y = int(y)
         
@@ -187,7 +269,7 @@ def nonlinearDiffusion(mvble_pts, img):
         dist_2 = np.linalg.norm(np_pt - np.array([int_x+1, int_y-1]))
 
         dist_3 = np.linalg.norm(np_pt - np.array([int_x-1, int_y]))
-        dist_4 = np.linalg.norm(np_pt - np.array([int_x, int_y]))
+        # dist_4 = np.linalg.norm(np_pt - np.array([int_x, int_y]))
         dist_5 = np.linalg.norm(np_pt - np.array([int_x+1, int_y]))
 
         dist_6 = np.linalg.norm(np_pt - np.array([int_x-1, int_y+1]))
@@ -201,59 +283,75 @@ def nonlinearDiffusion(mvble_pts, img):
 
     return deltaDomain
 
-if __name__ == "__main__":
-    start = timer()
-    total_iterations = 800
-    all_params = []
-    all_loss = []
-
+def create_remove_imgs():
     path_to_diffuse_pngs = 'diffusePngs/'
+    sim_img_folder = 'simulation_imgs/imgs/'
+    sim_graph_folder = 'simulation_imgs/graphs/'
     if not os.path.exists(path_to_diffuse_pngs):
         os.makedirs(path_to_diffuse_pngs)
 
     for img_file in os.listdir(path_to_diffuse_pngs):
         os.remove(path_to_diffuse_pngs + img_file)
 
+    if os.path.exists(sim_img_folder):
+        for img_file in os.listdir(sim_img_folder):
+            os.remove(sim_img_folder + img_file)
+
+    if os.path.exists(sim_graph_folder):
+        for img_file in os.listdir(sim_graph_folder):
+            os.remove(sim_graph_folder + img_file)
+
+if __name__ == "__main__":
+    start = timer()
+    total_iterations = 10
+    all_params = []
+    all_loss = []
+
+    create_remove_imgs()
+
     (max_T, count) = getSampleParameters()
     t = np.linspace(0., max_T, count)
 
-    # testdiffuse = np.zeros((11, 11))
-    # testdiffuse[5][5] = 255
-    # plt.imsave('TEST_diff_start.png', np.rot90(testdiffuse), cmap='Greys')
-    # diff_img = diffusion((5,5), testdiffuse)
-    # plt.imsave('TEST_diff_DIFFUSED.png', np.rot90(diff_img), cmap='Greys')
 
-    # print('\n Diffused: \n', diff_img)
+    # test = np.zeros((11, 11))
+    # test[5][5] = 255
+    # diffused_test = diffusion((5,5), test)
+    # os.sys.exit()
 
 
     # TODO: Make this (num_of_nodes) a command line argument
     vas_structure = VascularGenerator(max_range=100, num_of_nodes=2)
-    vas_structure.print_images()
+    vas_structure.print_images(graph_name='AutoGrad_startGraph.png', img_name='AutoGrad_startImg.png')
     mvable_pts = tuple(vas_structure.flatten_mvable_pts())
+    print(mvable_pts)
 
-    vas_structure.img = simulate(mvable_pts, t, vas_structure)
-    vas_structure.print_images(img_name='TEST_simulate.png')
-    print('DONE')
-    print(vas_structure.img)
-    print("LOSS:", loss_health(vas_structure.img))
-    os.sys.exit()
 
-    def fitness(params, iter):
-        return loss_health(simulate(params, t, vas_structure))
+    def fitness(mvable_pts, iter):
+        diffused_sim_img = simulate(mvable_pts, iter, vas_structure)
+        return loss_health(diffused_sim_img)
 
 
     # Setup display figures
 
     # Plot Data through callback
-    def callback(params, iter, g):
-        pass
+    def callback(mvable_pts, iter, g):
+        print(iter)
+        print(mvable_pts)
+        print(g)
+        return 3
 
+    # callback(mvable_pts, 0, 0)
+    grad_fitness = grad(fitness)
+    grad_fitness(mvable_pts, 1)
 
+    print('Starting AutoGrad\n')
+    optimized_mvble_pts = AdamTwo(grad(fitness), mvable_pts, step_size=0.005, num_iters=total_iterations, callback=callback)
+    print('Finished AutoGrad\n')
 
-    optimized_mvble_pts = adamMy(grad(fitness), fitness, mvable_pts, step_size = 0.005,
-                            num_iters=total_iterations, callback=callback)
-
-    print('Optimized Pts')
-    print(optimized_mvble_pts)
+    print('    Optimized Pts:')
+    print('      ', optimized_mvble_pts)
+    print('\n')
+    vas_structure.update_moveable_pts(optimized_mvble_pts)
+    vas_structure.print_images(graph_name='AutoGrad_graph.png', img_name='AutoGrad_img.png')
     end = timer()
     print('Time per iteration: ', str((end-start) / total_iterations))
