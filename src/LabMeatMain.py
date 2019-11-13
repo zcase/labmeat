@@ -30,6 +30,10 @@ def gaussian(x):
     return math.exp(-x**2)
 
 def random_walk():
+    path_to_diffuse_pngs = 'diffusePngs/'
+    sim_img_folder = 'simulation_imgs/imgs/'
+    sim_graph_folder = 'simulation_imgs/graphs/'
+
     vas_structure = VascularGenerator(max_range=100, num_of_nodes=2)
     vas_structure.print_images(graph_name='AutoGrad_startGraph.png', img_name='AutoGrad_startImg.png')
     mvable_pts = tuple(vas_structure.flatten_mvable_pts())
