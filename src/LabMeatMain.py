@@ -163,7 +163,7 @@ def loss_health(img):
     # 2D array of neutrient values
     # sum of sigmoid values (high N is low low, low N is high loss)
     newimg = np.array(minmax_scale(np.array(img)))
-    total_loss = 0
+    total_loss = 0.0
     for ix,iy in np.ndindex(newimg.shape):
         loss = gaussian(newimg[ix,iy])
         total_loss += loss
@@ -172,6 +172,7 @@ def loss_health(img):
 
 def simulate(mvble_pts, t, vasc_structure):
     # Updtae Vascular Structure Movable Points
+    print('LabMeatMain line 175: ', type(mvable_pts))
     vasc_structure.update_moveable_pts(mvble_pts)
 
     sim_img_folder = 'simulation_imgs/imgs/'
@@ -193,6 +194,7 @@ def simulate(mvble_pts, t, vasc_structure):
     # run the diffusion
     # diffused_img = lab_meat_diffuse(vas_structure.img, 100, 1, 50)
     diffused_img = diffusion(mvble_pts, vasc_structure.img)
+    print('LabMeatMain line 197: ', type(diffused_img))
 
     return diffused_img
 
@@ -229,10 +231,18 @@ def nonlinearDiffusion(mvble_pts, img):
     #https://stackoverflow.com/questions/12816293/vectorize-this-convolution-type-loop-more-efficiently-in-numpy
     h, w = img.shape
     deltaDomain = np.zeros((h, w))
-    for i in range(1, len(mvble_pts), 2):
-        x = mvble_pts[i-1]
-        y = mvble_pts[i]
+    # print('LabMeatMain Line 234: ', mvble_pts)
+    # for i in range(1, len(mvble_pts), 2):
+        # x = mvble_pts[i-1]
+        # y = mvble_pts[i]
         # print(type(x), type(1))
+
+    for i in range(len(mvble_pts)):
+        pt = mvble_pts[i]
+        x = pt[0]
+        y = pt[1]
+        # print('LabMeatMain Line 242: ', pt, x, y)
+        
         if type(x) != np.float64 and type(x) != type(1):
             x = x._value
             y = y._value
@@ -300,7 +310,7 @@ if __name__ == "__main__":
     # res = np.array([np.linalg.norm(th) for th in te])
     # print(te.shape[0])
     # test = np.arange(100.0).reshape(10,10)
-    new_convolution = np.ones((3,3)) * 100
+    # new_convolution = np.ones((3,3)) * 100
     # row_start = 4
     # row_end = 7
 
@@ -333,13 +343,20 @@ if __name__ == "__main__":
 
 
     # TODO: Make this (num_of_nodes) a command line argument
+    print('Creating Vas')
     vas_structure = VascularGenerator(max_range=100, num_of_nodes=2)
+    print('CreatED Vas')
     vas_structure.print_images(graph_name='AutoGrad_startGraph.png', img_name='AutoGrad_startImg.png')
+    # mvable_pts = vas_structure.moveable_pts
     mvable_pts = tuple(vas_structure.flatten_mvable_pts())
-    print(mvable_pts)
+    print('LabMeatMain Line 344: ', mvable_pts, type(mvable_pts[0]))
+    # print(mvable_pts)
+    # vas_structure.img = simulate(mvable_pts, 1, vas_structure)
+    # os.sys.exit()
 
 
     def fitness(mvable_pts, iter):
+        print('LabMeatMain line 347: ', type(mvable_pts))
         diffused_sim_img = simulate(mvable_pts, iter, vas_structure)
         return loss_health(diffused_sim_img)
 
@@ -348,14 +365,14 @@ if __name__ == "__main__":
 
     # Plot Data through callback
     def callback(mvable_pts, iter, g):
-        print(iter)
-        print(mvable_pts)
-        print(g)
+        # print(iter)
+        # print(mvable_pts)
+        # print(g)
         return 3
 
     # callback(mvable_pts, 0, 0)
-    grad_fitness = grad(fitness)
-    grad_fitness(mvable_pts, 1)
+    # grad_fitness = grad(fitness)
+    # grad_fitness(mvable_pts, 1)
 
     print('Starting AutoGrad\n')
     optimized_mvble_pts = AdamTwo(grad(fitness), mvable_pts, step_size=0.005, num_iters=total_iterations, callback=callback)

@@ -50,22 +50,23 @@ def computeFlow(vas_structure):
         for connection in vas_structure.graph[key]:
             # print('# ==================== #')
             # print('# ==== CONNECTION ==== #\n')
-            # print(connection)
+            # print('Equations: Line 53:, ', connection, type(connection))
             # print(type(connection))
-            if type(connection) != type(np.array((2, 4))):
-                # print(connection[0]._value)
-                # print(connection._value)
-                # print(tuple(connection._value))
-                # print(key)
-                t, tt = key
-                # print(t, tt)
-                tx = t._value
-                ty = tt._value
-                # print(tx, ty)
+            # if type(connection) != type(np.array((2, 4))):
+            #     # print(connection[0]._value)
+            #     # print(connection._value)
+            #     # print(tuple(connection._value))
+            #     # print(key)
+            #     t, tt = key
+            #     # print(t, tt)
+            #     tx = t._value
+            #     ty = tt._value
+            #     # print(tx, ty)
 
-                edgeOrderLookup.append(((tx, ty), (connection[0]._value, connection[1]._value)))
-            else:
-                edgeOrderLookup.append((key, (connection.tolist()[0], connection.tolist()[1])))
+            #     edgeOrderLookup.append(((tx, ty), (connection[0]._value, connection[1]._value)))
+            # else:
+                # edgeOrderLookup.append((key, (connection.tolist()[0], connection.tolist()[1])))
+            edgeOrderLookup.append((key, (connection[0], connection[1])))
             
             # edgeOrderLookup.append((key, (connection.tolist()[0], connection.tolist()[1])))
 
@@ -132,6 +133,12 @@ def computeFlow(vas_structure):
     
     flowMatrix = np.array(flowMatrix)
     answerMatrix = np.array(answerMatrix)
+
+    # print(flowMatrix)
+    # print(answerMatrix)
+
+    # print(flowMatrix.shape)
+    # print(answerMatrix.shape)
 
     variables = np.linalg.solve(flowMatrix, answerMatrix)
 

@@ -5,6 +5,7 @@ from collections import defaultdict
 from scipy.spatial import Delaunay
 from skimage.draw import line
 from bresenham import bresenham
+import os
 
 
 class VascularGenerator:
@@ -12,16 +13,16 @@ class VascularGenerator:
         self.graph = defaultdict(list)
         self.update_count = 0
         # Create Wall start and end points
-        self.min_range = min_range
-        self.max_range = max_range
-        self.left_wall_startend = np.array([[min_range, min_range], [min_range, max_range]])
-        self.right_wall_startend = np.array([[max_range, min_range], [max_range, max_range]])
+        self.min_range = float(min_range)
+        self.max_range = float(max_range)
+        self.left_wall_startend = np.array([[self.min_range, self.min_range], [self.min_range, self.max_range]])
+        self.right_wall_startend = np.array([[self.max_range, self.min_range], [self.max_range, self.max_range]])
 
         # Create Left and Right Walls
-        self.left_wall, self.right_wall = self.create_walls(min_range, max_range, num_of_nodes)
+        self.left_wall, self.right_wall = self.create_walls(self.min_range, self.max_range, num_of_nodes)
 
         # Generate random points
-        self.pts, self.moveable_pts = self.generate_pts(min_range, max_range, num_of_nodes, dim,
+        self.pts, self.moveable_pts = self.generate_pts(self.min_range, self.max_range, num_of_nodes, dim,
                                                         self.left_wall, self.right_wall,
                                                         self.left_wall_startend, self.right_wall_startend)
 
@@ -36,23 +37,33 @@ class VascularGenerator:
 
 
     def add_edge_to_graph(self, np_pt1, np_pt2):
+        # print('Line 42: ', np_pt1, type(np_pt1))
+        # print('Add edge: line 40: ')
+        # print('  ', np_pt1, list(np_pt1))
         if type(np_pt1) != type(np.array((2,4))):
-            np_pt1 = np_pt1._value
-            np_pt2 = np_pt2._value
+            np_pt1 = list(np_pt1._value)
+            np_pt2 = list(np_pt2._value)
+        else:
+            np_pt1 = list(np_pt1)
+            np_pt2 = list(np_pt2)
         # print('Adding To Graph: ', np_pt1, np_pt2)
         if tuple(np_pt1) not in self.graph.keys():
             self.graph[tuple(np_pt1)]
         if tuple(np_pt2) not in self.graph.keys():
             self.graph[tuple(np_pt2)]
         # Compares the x values
+
         if np_pt1[0] < np_pt2[0]:
-            if not self.arreq_in_list(np_pt2, self.graph[tuple(np_pt1)]):
+            # if not self.arreq_in_list(np_pt2, self.graph[tuple(np_pt1)]):
+            if not np_pt2 in self.graph[tuple(np_pt1)]:
                 self.graph[tuple(np_pt1)].append(np_pt2)
         elif np_pt1[0] == np_pt2[0] and np_pt1[1] > np_pt2[1]:              # Added this to enforce bottom-right node as exit
-            if not self.arreq_in_list(np_pt2, self.graph[tuple(np_pt1)]):
+            # if not self.arreq_in_list(np_pt2, self.graph[tuple(np_pt1)]):
+            if not np_pt2 in self.graph[tuple(np_pt1)]:
                 self.graph[tuple(np_pt1)].append(np_pt2)
         else:
-            if not self.arreq_in_list(np_pt1, self.graph[tuple(np_pt2)]):
+            # if not self.arreq_in_list(np_pt1, self.graph[tuple(np_pt2)]):
+            if not np_pt1 in self.graph[tuple(np_pt2)]:
                 self.graph[tuple(np_pt2)].append(np_pt1)
 
 
@@ -62,11 +73,6 @@ class VascularGenerator:
 
     def arreq_in_list_wIdx(self, myarr, list_arrays):
         return next((idx for idx, elem in enumerate(list_arrays) if np.array_equal(elem, myarr)), -1)
-
-    def create_pt_edge_dict(self, pts, edges):
-        for pt1, pt2 in edges:
-            # print('Pt1: ', pt1, '  Pt2: ', pt2)
-            self.add_edge_to_graph(pt1, pt2)
 
     def depth_first_search(self):
         # https://www.geeksforgeeks.org/depth-first-search-or-dfs-for-a-graph/
@@ -80,7 +86,7 @@ class VascularGenerator:
 
     def dfs_helper(self, node_idx, node, visted_nodes):
         visted_nodes[node_idx] = True
-        print(node)
+        # print(node)
 
         for i, node in enumerate(self.graph[tuple(node)]):
             if not visted_nodes[node_idx]:
@@ -90,11 +96,13 @@ class VascularGenerator:
         edges = []
         for _, s in enumerate(tri.simplices):
             tri_pts = pts[s]
+            # print('Line 98: ', tri_pts, list(tri_pts))
 
             for i, pt in enumerate(tri_pts):
                 if i == 0:
                     continue
                 elif pt[0] == tri_pts[-1][0] and pt[1] == tri_pts[-1][1]:
+                    # print('Line 104: ', tri_pts[0], list(tri_pts[0]))
                     self.add_edge_to_graph(pt, tri_pts[0])
 
                 self.add_edge_to_graph(tri_pts[i-1], pt)
@@ -104,65 +112,61 @@ class VascularGenerator:
 
         for pt_pair in [topl_to_topR, btml_to_btmR]:
             pt1, pt2 = pt_pair
-            if self.arreq_in_list(pt2, self.graph[tuple(pt1)]):
+            pt1 = [i for i in pt1]
+            pt2 = [i for i in pt2]
+
+            if pt2 in self.graph[tuple(pt1)]:
+            # if self.arreq_in_list(pt2, self.graph[tuple(pt1)]):
                 idx = self.arreq_in_list_wIdx(pt2, self.graph[tuple(pt1)])
                 del self.graph[tuple(pt1)][idx]
-            elif self.arreq_in_list(pt1, self.graph[tuple(pt2)]):
+            elif pt1 in self.graph[tuple(pt2)]:
+            # elif self.arreq_in_list(pt1, self.graph[tuple(pt2)]):
                 idx = self.arreq_in_list_wIdx(pt1, self.graph[tuple(pt2)])
                 del self.graph[tuple(pt1)][idx]
 
-        edges = list()
+        edges = []
         for tuple_pt, np_pt_list in self.graph.items():
             for np_pt in np_pt_list:
-                edges.append((np.asarray(tuple_pt), np_pt))
+                # edges.append((np.asarray(tuple_pt), list(np_pt)))
+                edges.append((list(tuple_pt), list(np_pt)))
 
         return edges
 
     def convert_to_img2(self, edges, max_range):
-        img = np.zeros((max_range+1, max_range+1), dtype=float)
+        img = []
+        for _ in range(int(max_range + 1.0)):
+            img.append([0.0 for i in range(int(max_range + 1.0))])
 
         for edge in edges:
             pt1, pt2 = edge
-            # print(pt1)
-            # print(pt1[0])
-            # print(type(pt1))
-            # print(type(pt1[0]))
-            # if pt
-            if type(pt1[0]) != type(np.array((2, 4))) and (type(pt1[0]) != np.float64):
-                # print('HERE', pt1[0]._value)
-                pts_on_line = np.array(list(bresenham(int(pt1[0]._value), int(pt1[1]._value), int(pt2[0]._value), int(pt2[1]._value))))
-                img[pts_on_line[:,0], pts_on_line[:,1]] = 1
-                img[int(pt1[0]._value), int(pt1[1]._value)] = 2
-                img[int(pt2[0]._value), int(pt2[1]._value)] = 2
-                img = np.array(img)
-            else:
-                pts_on_line = np.array(list(bresenham(int(pt1[0]), int(pt1[1]), int(pt2[0]), int(pt2[1]))))
+            # print(pt1, type(pt1))
+            # print(pt1, np.array(pt1))
+            # print('line 142: ', [i for i in list(pt1)], pt1[0][0])
+            pt1 = [int(i) for i in list(pt1)]
+            pt2 = [int(i) for i in list(pt2)]
+            pts_on_line = list(bresenham(pt1[0], pt1[1], pt2[0], pt2[1]))
+            for x, y in pts_on_line:
+                if (x == pt1[0] and y == pt1[1]) or (x == pt2[0] and y == pt2[1]):
+                    img[x][y] = 2
+                else:
+                    img[x][y] = 1
 
-                img[pts_on_line[:,0], pts_on_line[:,1]] = 1
-                img[int(pt1[0]), int(pt1[1])] = 2
-                img[int(pt2[0]), int(pt2[1])] = 2
-                img = np.array(img)
-
-            # pts_on_line = np.array(list(bresenham(int(pt1[0]), int(pt1[1]), int(pt2[0]), int(pt2[1]))))
-
-            # img[pts_on_line[:,0], pts_on_line[:,1]] = 1
-            # img[int(pt1[0]), int(pt1[1])] = 2
-            # img[int(pt2[0]), int(pt2[1])] = 2
-
-        return img
+        return np.array(img)
     
     def add_flows_to_img(self, flow_dict):
+        img = []
+        for _ in range(int(self.max_range + 1)):
+            img.append([0 for i in range(int(self.max_range + 1))])
+
         for pt_key, flow_val in flow_dict.items():
             pt1, pt2 = pt_key
-            pt1 = np.asarray(pt1)
-            pt2 = np.asarray(pt2)
-            pts_on_line = np.array(list(bresenham(int(pt1[0]), int(pt1[1]), int(pt2[0]), int(pt2[1]))))
-            self.img[pts_on_line[:,0], pts_on_line[:,1]] = flow_val
-            self.img[int(pt1[0]), int(pt1[1])] = flow_val
-            self.img[int(pt2[0]), int(pt2[1])] = flow_val
-            # print(self.img)
-            # print('\n\n')
-        self.img = np.array(self.img)
+            pt1 = [int(i) for i in list(pt1)]
+            pt2 = [int(i) for i in list(pt2)]
+            pts_on_line = list(bresenham(pt1[0], pt1[1], pt2[0], pt2[1]))
+            for x, y in pts_on_line:
+                img[x][y] = flow_val
+
+        self.img = np.array(img)
 
         return self.img
 
@@ -178,26 +182,26 @@ class VascularGenerator:
             num_left_nodes = np.random.randint(1, high=high_node_val)
             num_right_nodes = np.random.randint(1, high=high_node_val)
 
-        left_wall = np.empty([num_left_nodes, 2], dtype=float)
-        right_wall = np.empty([num_right_nodes, 2], dtype=float)
+        left_wall = []
+        right_wall = []
 
         # Create Nodes for Left Wall (In)
         for i in range(num_left_nodes):
-            node = np.array([[min, np.random.randint(min + 1, max - 1)]], dtype=float)
-            if left_wall != np.array([]) and np.all(left_wall[:, 0] == node):
+            node = [[min, np.random.randint(min + 1, max - 1)]]
+            if node[0] in left_wall:
                 i -= 1
             else:
-                left_wall[i] = node[0]
+                left_wall.append(node[0])
 
         # Create Nodes for Right Wall (Out)
         for i in range(num_right_nodes):
-            node = np.array([[max, np.random.randint(min + 1, max - 1)]], dtype=float)
-            if right_wall != np.array([]) and np.all(right_wall[:, 0] == node):
+            node = [[max, np.random.randint(min + 1, max - 1)]]
+            if node[0] in right_wall:
                 i -= 1
             else:
-                right_wall[i] = node[0]
+                right_wall.append(node[0])
 
-        return left_wall, right_wall
+        return np.array(left_wall), np.array(right_wall)
 
     def calculate_distance(self, point, neighbor):
         '''
@@ -208,13 +212,15 @@ class VascularGenerator:
 
     def flatten_mvable_pts(self):
 
-        flattened_pts = sorted(self.moveable_pts, key=lambda k: (-k[0], k[1]),  reverse=True)
-        flattened_pts = np.hstack(flattened_pts)
+        # flattened_pts = sorted(self.moveable_pts, key=lambda k: (-k[0], k[1]),  reverse=True)
+        # print('VasGen Line 216: ', flattened_pts)
+        # flattened_pts = np.hstack(flattened_pts)
         # flattened_pts = ()
         # for np_pt in list(sorted(self.moveable_pts, key=lambda k: (-k[0], k[1]),  reverse=True)):
         #     flattened_pts += tuple(np_pt)
 
-        return flattened_pts
+        # return flattened_pts
+        return self.moveable_pts
 
 
     def update_moveable_pts(self, new_mvable_pts):
@@ -231,7 +237,10 @@ class VascularGenerator:
         # print('np.vstack: ', np.vstack((tuple_of_pts)))
         # print('test  :\n', np.vstack({tuple(row) for row in tuple_of_pts}))
         # val = np.vstack((tuple_of_pts))
-        self.moveable_pts = np.vstack((tuple_of_pts))
+        print('VasGen Line 238: ', type(new_mvable_pts), new_mvable_pts, np.vstack(new_mvable_pts))
+        print('VasGen Line 239: ', type(tuple_of_pts), tuple_of_pts)
+        # self.moveable_pts = np.vstack((tuple_of_pts))
+        self.moveable_pts = np.vstack(new_mvable_pts)
         # new_mvable_pts = np.unique(val, axis=0)
         # new_mvable_pts = val
         # pts = new_mvable_pts
@@ -267,14 +276,39 @@ class VascularGenerator:
 
     def generate_pts(self, min_range, max_range, num_pts, dim, lt_wall, rht_wall, lt_startend, rht_startend):
         pts = np.random.uniform(low=min_range, high=max_range, size=(num_pts, dim))
+        pts = [list(pt) for pt in pts]
         moveable_pts = pts
+        # print('VasGen Line 280 ', moveable_pts)
+        # print('VasGen Line 281 ', pts)
+        # print('VasGen Line 282 ', lt_wall)
+        # print('VasGen Line 283 ', rht_wall)
+        # print('VasGen Line 284 ', lt_startend)
+        # print('VasGen Line 285 ', rht_startend)
+
+        # for pt in 
+
+        # for pt in list(lt_wall)+list(rht_wall)+list(lt_startend)+list(rht_startend):
+        #     pts.append(list(pt))
+
+        # print('VasGen Line 290 ', pts)
+        # print('VasGen Line 290 ', np.array(pts))
+        # pts.append([list(pt) for pt in lt_wall])
+        # pts.append([list(pt) for pt in rht_wall])
+        # pts.append([list(pt) for pt in lt_startend])
+        # pts.append([list(pt) for pt in rht_startend])
 
         pts = np.append(pts, lt_wall, axis=0)
         pts = np.append(pts, rht_wall, axis=0)
         pts = np.append(pts, lt_startend, axis=0)
         pts = np.append(pts, rht_startend, axis=0)
+        # print(pts)
+        # print(np.array(pts))
 
-        pts = np.array(sorted(pts, key=lambda k: (-k[0], k[1]),  reverse=True))
+        pts = np.array(sorted(np.array(pts), key=lambda k: (-k[0], k[1]),  reverse=True))
+
+        # print('VasGen Line 306: \n', pts)
+
+        # os.sys.exit()
 
         return pts, moveable_pts
 

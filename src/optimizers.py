@@ -59,9 +59,10 @@ def adam(grad, x,  callback=None, num_iters=100,
     It's basically RMSprop with momentum and some correction terms."""
     m = np.zeros(len(x))
     v = np.zeros(len(x))
-    print('X = ', x)
+    print('X = ', x, type(x))
 
     for i in range(0, num_iters):
+        print('HELLO')
         g = grad(x,i)
         print('        ', i, g)
         if callback: 
