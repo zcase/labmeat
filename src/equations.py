@@ -38,7 +38,8 @@ def computeFlow(vas_structure):
     numEdges = len(vas_structure.edges)
 
     matrixSize = numNodes + 2*numEdges
-    flowMatrix = np.zeros((matrixSize, matrixSize))
+    flowMatrix = [[0 for x in range(matrixSize)] for y in range(matrixSize)]
+    
 
     nodeOrderLookup = []    # References for consistency of columns
     edgeOrderLookup = []
@@ -115,8 +116,9 @@ def computeFlow(vas_structure):
 
 
     # All values in matrix 'B' are zero, except for first row for pressure at first node ('initial' section)
-    answerMatrix = np.zeros((matrixSize, 1))
+    answerMatrix = [0]*matrixSize
     answerMatrix[0] = 1000
+    
     # answerMatrix[0] = 1
 
     # print('\nNodes:\n')
@@ -127,6 +129,10 @@ def computeFlow(vas_structure):
     # for edge in edgeOrderLookup:
     #     print(edge)
 
+    
+    flowMatrix = np.array(flowMatrix)
+    answerMatrix = np.array(answerMatrix)
+
     variables = np.linalg.solve(flowMatrix, answerMatrix)
 
     # print('\nSolved Variables:\n')
@@ -136,7 +142,7 @@ def computeFlow(vas_structure):
     flowDict = defaultdict(int)
     
     for i, edge in enumerate(edgeOrderLookup):
-        flowDict[edge] = abs(variables[i+numNodes][0])
+        flowDict[edge] = abs(variables[i+numNodes])
 
     return flowDict
     
@@ -158,3 +164,4 @@ def printSolvedVariables(nodeLookup, edgeLookup, variables):
 
     for i, edge in enumerate(edgeLookup):
         print('𝝙P'+str(i+1)+':', variables[index], ' Edge:', edge)
+        index += 1
