@@ -278,6 +278,12 @@ def create_remove_imgs():
     if not os.path.exists(path_to_diffuse_pngs):
         os.makedirs(path_to_diffuse_pngs)
 
+    if not os.path.exists(sim_img_folder):
+        os.makedirs(sim_img_folder)
+
+    if not os.path.exists(sim_graph_folder):
+        os.makedirs(sim_graph_folder)
+
     for img_file in os.listdir(path_to_diffuse_pngs):
         os.remove(path_to_diffuse_pngs + img_file)
 
