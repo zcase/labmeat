@@ -6,6 +6,7 @@ from scipy.spatial import Delaunay
 from skimage.draw import line
 from bresenham import bresenham
 import os
+from autograd.builtins import isinstance, tuple
 
 
 class VascularGenerator:
@@ -102,7 +103,6 @@ class VascularGenerator:
                 if i == 0:
                     continue
                 elif pt[0] == tri_pts[-1][0] and pt[1] == tri_pts[-1][1]:
-                    # print('Line 104: ', tri_pts[0], list(tri_pts[0]))
                     self.add_edge_to_graph(pt, tri_pts[0])
 
                 self.add_edge_to_graph(tri_pts[i-1], pt)
@@ -230,7 +230,7 @@ class VascularGenerator:
         for i in range(2, len(new_mvable_pts)+2, 2):
             cur  = new_mvable_pts[i-2:i]
             if i > 2:
-                tuple_of_pts += (prev, cur)
+                tuple_of_pts = tuple_of_pts + (prev, cur)
             prev = cur
 
         # print('tup of pts: ', tuple_of_pts)
@@ -270,7 +270,7 @@ class VascularGenerator:
         self.edges = self.generate_edges(self.tri, self.pts)
         self.img = None
         self.img = self.convert_to_img2(self.edges, self.max_range)
-        self.update_count += 1
+        self.update_count = self.update_count + 1
         # self.print_images(graph_name='Vasc_Graph_' + str(self.update_count) + '.png', img_name='Vasc2D_img_' +str(self.update_count)+ '.png')
 
 
@@ -315,7 +315,7 @@ class VascularGenerator:
     def count_nodes(self, *argv):
         count = 0
         for arg in argv:
-            count += len(arg)
+            count = count + len(arg)
         return count
 
 

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from VascularGenerator import VascularGenerator
 from equations import *
 from diffu2D_u0 import lab_meat_diffuse
@@ -9,7 +10,11 @@ import imageio
 from natsort import natsorted, ns
 from sklearn.preprocessing import minmax_scale
 
-from optimizers import adam as AdamTwo
+from optimizers import adamVas as AdamTwo
+from autograd.builtins import isinstance, tuple, list
+
+from VasGen2 import VasGen2
+import random
 
 
 # import numpy as np
@@ -18,16 +23,17 @@ import autograd.numpy as np
 from autograd import grad
 from autograd.scipy.integrate import odeint
 from autograd.builtins import tuple
-from autograd.misc.optimizers import adam
+# from autograd.misc.optimizers import adam
 import autograd.numpy.random as npr
 import autograd.scipy.signal as sig
 from timeit import default_timer as timer
+from autograd.tracer import trace, Node
 
 def sigmoid(x):
-    return 1 / (1 + math.exp(-x))
+    return 1 / (1 + np.exp(-x))
 
 def gaussian(x):
-    return math.exp(-x**2)
+    return np.exp(-x**2)
 
 def random_walk():
     path_to_diffuse_pngs = 'diffusePngs/'
@@ -91,8 +97,8 @@ def random_walk():
 
 
 
-def get_submatrix_add(np_matrix, center_pt_tuple, convolution, submatrix_size=2):
-    h, w = np_matrix.shape
+def get_submatrix_add(lst_matrix, center_pt_tuple, convolution, submatrix_size=2):
+    w, h = len(lst_matrix), len(lst_matrix[0])
     orig_row, orig_col = center_pt_tuple
     row, col = orig_row, orig_col
     row_start = -1
@@ -136,21 +142,28 @@ def get_submatrix_add(np_matrix, center_pt_tuple, convolution, submatrix_size=2)
     if (orig_col + submatrix_size) >= w:
         conv_col_end = 1
 
-    new_convolution = np.array(convolution[conv_row_start:conv_row_end, conv_col_start:conv_col_end])
-    # np_matrix[row_start:row_end, col_start:col_end] += new_convolution
+    new_convolution = convolution[conv_row_start:conv_row_end][conv_col_start:conv_col_end]
+
     new_matrix = []
-    for row_idx, row in enumerate(np_matrix):
+    for row_idx, lst_row in enumerate(lst_matrix):
         count = 0
         if row_idx >= row_start and row_idx < row_end and count < conv_col_end:
-            val2 = list(new_convolution[conv_col_start + count])
-            updated_lst_vals = [sum(x) for x in zip(row[col_start:col_end], val2)]
-            row[col_start:col_end] = updated_lst_vals # list assignment not np.array assignment
-            count += 1
+            val2 = new_convolution[conv_col_start + count]
+            updated_lst_vals = [sum(x) for x in zip(lst_row[col_start:col_end], val2)]
 
-        new_matrix.append(row)
-    
-    new_matrix = np.array(new_matrix)
+            new_row=[]
+            row_count = 0
+            for cur_col_idx, val in enumerate(lst_row):
+                if cur_col_idx >= col_start and cur_col_idx < col_end:
+                    new_row.append(updated_lst_vals[0+row_count])
+                    row_count = row_count + 1
+                else:
+                    new_row.append(val)
 
+            count = count + 1
+            lst_row = new_row
+
+        new_matrix.append(lst_row)
     return new_matrix
 
 
@@ -159,28 +172,21 @@ def getSampleParameters():
     #     (max_T, samples per trajectory) = getSampleParameters()
     return (5, 25) #3 15 works
 
-def loss_health(img):
+def loss_health(img, iter):
     # 2D array of neutrient values
     # sum of sigmoid values (high N is low low, low N is high loss)
-    newimg = np.array(minmax_scale(np.array(img)))
     total_loss = 0.0
-    for ix,iy in np.ndindex(newimg.shape):
-        loss = gaussian(newimg[ix,iy])
-        total_loss += loss
+    for ix,iy in np.ndindex(img.shape):
+        loss = gaussian(img[ix,iy])
+        total_loss = total_loss + loss
 
+    print('LabMeatMain Line 171 LOSS:                           ', total_loss, iter)
     return total_loss
 
 def simulate(mvble_pts, t, vasc_structure):
+    # print('Int SIMULATE')
     # Updtae Vascular Structure Movable Points
-    print('LabMeatMain line 175: ', type(mvable_pts))
     vasc_structure.update_moveable_pts(mvble_pts)
-
-    sim_img_folder = 'simulation_imgs/imgs/'
-    sim_graph_folder = 'simulation_imgs/graphs/'
-    if not os.path.exists(sim_img_folder):
-        os.makedirs(sim_img_folder)
-    if not os.path.exists(sim_graph_folder):
-        os.makedirs(sim_graph_folder)
 
     # Solve for flow
     flowDict = computeFlow(vasc_structure)
@@ -191,10 +197,7 @@ def simulate(mvble_pts, t, vasc_structure):
     # vasc_structure.print_images(graph_name=sim_graph_folder + 'sim_graph_'+str(t)+'.png',
     #                             img_name=sim_img_folder + 'sim_img_'+str(t)+'.png')
 
-    # run the diffusion
-    # diffused_img = lab_meat_diffuse(vas_structure.img, 100, 1, 50)
-    diffused_img = diffusion(mvble_pts, vasc_structure.img)
-    print('LabMeatMain line 197: ', type(diffused_img))
+    diffused_img = diffusion(vasc_structure.moveable_pts, vasc_structure.img)
 
     return diffused_img
 
@@ -203,54 +206,52 @@ def diffusion(mvble_pts, img):
     D = .225
 
     #https://programtalk.com/python-examples/autograd.scipy.signal.convolve/
-    for i in range(0, 20): # how many times you run a diffusion update
+    for _ in range(0, 20): # how many times you run a diffusion update
         convolve = np.array([[1*D, 1*D, 1*D],[1*D,-8*D,1*D], [1*D, 1*D, 1*D]])
-        deltaDiffusion = sig.convolve(img, convolve)[1:-1, 1:-1] #take off first and last
-        # if i > 0:
-        deltaDiffusion += np.array(img)
+        deltaDiffusion = sig.convolve(np.array(img), convolve)[1:-1, 1:-1] #take off first and last
+        deltaDiffusion = deltaDiffusion + np.array(img)
 
         # the update to the img from one step of diffusion
-        img = np.array(img + deltaDiffusion + nonlinearDiffusion(mvble_pts, img))
-        img_pic = np.pad(img, ((2, 3), (2, 3)), 'constant')
-        plt.imsave('diffusePngs/TestDiffuse_'+str(i)+'.png', np.rot90(img_pic), cmap='jet')
+        img = np.array(np.array(img) + np.array(deltaDiffusion) + np.array(nonlinearDiffusion(mvble_pts, img)))
+    #     print(type(img))
+    #     img_pic = np.pad(img, ((2, 3), (2, 3)), 'constant')
+    #     plt.imsave('diffusePngs/TestDiffuse_'+str(i)+'.png', np.rot90(np.array(list(img_pic))), cmap='jet')
 
-    path_to_img_dir = 'diffusePngs/'
-    images = []
-    for file_name in natsorted(os.listdir(path_to_img_dir), key=lambda y: y.lower()):
-        if file_name.endswith('.png'):
-            file_path = os.path.join(path_to_img_dir, file_name)
-            images.append(imageio.imread(file_path))
-    imageio.mimsave('VascDiffuse.gif', images, fps=5)
+    # path_to_img_dir = 'diffusePngs/'
+    # images = []
+    # for file_name in natsorted(os.listdir(path_to_img_dir), key=lambda y: y.lower()):
+    #     if file_name.endswith('.png'):
+    #         file_path = os.path.join(path_to_img_dir, file_name)
+    #         images.append(imageio.imread(file_path))
+    # imageio.mimsave('VascDiffuse.gif', images, fps=5)
 
-    return img
+    # newimg = np.array(minmax_scale(np.array(img._value)))
+    np_img = np.array(img)
+    mn, mx = np_img.min(), np_img.max()
+    np_img = (np_img - mn) / (mx - mn)
+    return np_img
 
+def euclidean(v1, v2):
+    return sum((p-q)**2 for p, q in zip(v1, v2)) ** .5
 
 # None linear diffusion (compute each convoution for each location)
 def nonlinearDiffusion(mvble_pts, img):
     #http://greg-ashton.physics.monash.edu/applying-python-functions-in-moving-windows.html
     #https://stackoverflow.com/questions/12816293/vectorize-this-convolution-type-loop-more-efficiently-in-numpy
-    h, w = img.shape
-    deltaDomain = np.zeros((h, w))
-    # print('LabMeatMain Line 234: ', mvble_pts)
-    # for i in range(1, len(mvble_pts), 2):
-        # x = mvble_pts[i-1]
-        # y = mvble_pts[i]
-        # print(type(x), type(1))
+    h, w = np.array(img).shape
+    deltaDomain2 = []
+    for _ in range(w):
+        deltaDomain2.append([0.0 for _ in range(h)])
 
     for i in range(len(mvble_pts)):
         pt = mvble_pts[i]
         x = pt[0]
         y = pt[1]
-        # print('LabMeatMain Line 242: ', pt, x, y)
-        
-        if type(x) != np.float64 and type(x) != type(1):
-            x = x._value
-            y = y._value
-        int_x = int(x)
-        int_y = int(y)
-        
+
+        int_x = int(np.array(mvble_pts[i][0]._value))
+        int_y = int(np.array(mvble_pts[i][1]._value))
         np_pt = np.array([x, y])
-        # int_np_pt = np.array([int_x, int_y])
+
         dist_0 = np.linalg.norm(np_pt - np.array([int_x-1, int_y-1]))
         dist_1 = np.linalg.norm(np_pt - np.array([int_x, int_y-1]))
         dist_2 = np.linalg.norm(np_pt - np.array([int_x+1, int_y-1]))
@@ -265,10 +266,10 @@ def nonlinearDiffusion(mvble_pts, img):
 
         X = -sigmoid(dist_0 - 1) - sigmoid(dist_1 - 1) - sigmoid(dist_2 - 1) - sigmoid(dist_3 - 1) - sigmoid(dist_5 - 1) - sigmoid(dist_6 - 1) - sigmoid(dist_7 - 1) - sigmoid(dist_8 - 1)
 
-        convolution = np.array([[sigmoid(dist_0 - 1), sigmoid(dist_1 - 1), sigmoid(dist_2 - 1)], [sigmoid(dist_3 - 1), X, sigmoid(dist_5 - 1)], [sigmoid(dist_6 - 1), sigmoid(dist_7 - 1), sigmoid(dist_8 - 1)]])
-        deltaDomain = get_submatrix_add(deltaDomain, (int_x, int_y), convolution)
+        convolution = [[sigmoid(dist_0 - 1), sigmoid(dist_1 - 1), sigmoid(dist_2 - 1)], [sigmoid(dist_3 - 1), X, sigmoid(dist_5 - 1)], [sigmoid(dist_6 - 1), sigmoid(dist_7 - 1), sigmoid(dist_8 - 1)]]
+        deltaDomain2 = get_submatrix_add(deltaDomain2, (int_x, int_y), convolution)
 
-    return deltaDomain
+    return deltaDomain2
 
 def create_remove_imgs():
     path_to_diffuse_pngs = 'diffusePngs/'
@@ -288,9 +289,13 @@ def create_remove_imgs():
         for img_file in os.listdir(sim_graph_folder):
             os.remove(sim_graph_folder + img_file)
 
+
+
+
+
 if __name__ == "__main__":
     start = timer()
-    total_iterations = 10
+    total_iterations = 100
     all_params = []
     all_loss = []
 
@@ -299,89 +304,64 @@ if __name__ == "__main__":
     (max_T, count) = getSampleParameters()
     t = np.linspace(0., max_T, count)
 
-
-    # test = np.zeros((11, 11))
-    # test[5][5] = 255
-    # t = np.array(test)
-    # # diffused_test = diffusion((5,5), test)
-    # for t in te:
-    #     print(t)
-    # print(te)
-    # res = np.array([np.linalg.norm(th) for th in te])
-    # print(te.shape[0])
-    # test = np.arange(100.0).reshape(10,10)
-    # new_convolution = np.ones((3,3)) * 100
-    # row_start = 4
-    # row_end = 7
-
-
-    # col_start = 4
-    # col_end = 7
-
-    # print(new_convolution[1, 1:3])
-
-    # new_matrix = []
-    # for row_idx, row in enumerate(test):
-    #     row = list(row)
-    #     if row_idx >= row_start and row_idx < row_end:
-    #         val2 = list(new_convolution[(row_idx-len(new_convolution)) - 1])
-    #         updated_lst_vals = [sum(x) for x in zip(row[col_start:col_end], val2)]
-    #         row[col_start:col_end] = updated_lst_vals
-
-    #     new_matrix.append(row)
-    
-    # new_matrix = np.array(new_matrix)
-
-    # deltaDomain = np.arange(100.0).reshape(10,10)
-
-    # print(deltaDomain)
-    # deltaDomain = get_submatrix_add(deltaDomain, (0,0), new_convolution)
-    # print('\n')
-    # print(deltaDomain)
-
-    # os.sys.exit()
-
-
-    # TODO: Make this (num_of_nodes) a command line argument
     print('Creating Vas')
-    vas_structure = VascularGenerator(max_range=100, num_of_nodes=2)
+    # vas_structure = VascularGenerator(max_range=100, num_of_nodes=2)
+    # vas_structure = VasGen2(max_range=100, num_of_nodes=2)
+    vas_structure = VasGen2(max_range=20, num_of_nodes=2)
     print('CreatED Vas')
     vas_structure.print_images(graph_name='AutoGrad_startGraph.png', img_name='AutoGrad_startImg.png')
-    # mvable_pts = vas_structure.moveable_pts
-    mvable_pts = tuple(vas_structure.flatten_mvable_pts())
-    print('LabMeatMain Line 344: ', mvable_pts, type(mvable_pts[0]))
-    # print(mvable_pts)
-    # vas_structure.img = simulate(mvable_pts, 1, vas_structure)
-    # os.sys.exit()
+
+    # Solve for flow
+    flowDict = computeFlow(vas_structure)
+    vas_structure.add_flows_to_img(flowDict)
+    img = vas_structure.img
 
 
-    def fitness(mvable_pts, iter):
-        print('LabMeatMain line 347: ', type(mvable_pts))
-        diffused_sim_img = simulate(mvable_pts, iter, vas_structure)
-        return loss_health(diffused_sim_img)
+    def fitness(fit_mvable_pts, iter):
+        diffused_img = diffusion(fit_mvable_pts, img)
+        return loss_health(diffused_img, iter)
 
 
     # Setup display figures
 
     # Plot Data through callback
     def callback(mvable_pts, iter, g):
-        # print(iter)
-        # print(mvable_pts)
-        # print(g)
+
+        # plt.imshow(img)
+        # plt.show()
+        # print('     Callback: iter', iter)
+        # print('     Callback: mvablepts: ', mvable_pts)
+        # print('     Callback: g', g)
         return 3
 
-    # callback(mvable_pts, 0, 0)
-    # grad_fitness = grad(fitness)
-    # grad_fitness(mvable_pts, 1)
-
+    pts = np.array(vas_structure.pts)
     print('Starting AutoGrad\n')
-    optimized_mvble_pts = AdamTwo(grad(fitness), mvable_pts, step_size=0.005, num_iters=total_iterations, callback=callback)
+    print('Original MvPts: ', vas_structure.moveable_pts)
+    optimized_mvble_pts = AdamTwo(grad(fitness), vas_structure.moveable_pts, vas_structure=vas_structure, step_size=0.0001, num_iters=total_iterations, callback=callback)
     print('Finished AutoGrad\n')
 
     print('    Optimized Pts:')
     print('      ', optimized_mvble_pts)
     print('\n')
-    vas_structure.update_moveable_pts(optimized_mvble_pts)
-    vas_structure.print_images(graph_name='AutoGrad_graph.png', img_name='AutoGrad_img.png')
+
+    # print('Optimized PTs')
+    # print(vas_structure.pts)
+    # vas_structure.update_moveable_pts(optimized_mvble_pts)
+    print('Setting up optimized points')
+    print(np.array(vas_structure.pts))
+    # print()
+    # print(pts)
+    # vas_structure.print_images(graph_name='Optimized_AutoGrad_graph.png', img_name='Optimized_AutoGrad_img.png')
     end = timer()
     print('Time per iteration: ', str((end-start) / total_iterations))
+
+    sim_img_folder = 'simulation_imgs/imgs/'
+    sim_graph_folder = 'simulation_imgs/graphs/'
+    for path_folder in [('Img', sim_img_folder), ('Graph', sim_graph_folder)]:
+        img_name, path_to_img_dir = path_folder
+        images = []
+        for file_name in natsorted(os.listdir(path_to_img_dir), key=lambda y: y.lower()):
+            if file_name.endswith('.png'):
+                file_path = os.path.join(path_to_img_dir, file_name)
+                images.append(imageio.imread(file_path))
+        imageio.mimsave('AutoDiff_'+img_name+'.gif', images, fps=50)

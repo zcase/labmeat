@@ -28,9 +28,11 @@ import math
 # import numpy as np
 import autograd.numpy as np
 from collections import defaultdict 
+from autograd.builtins import isinstance, tuple
 
 
 def computeFlow(vas_structure):
+    # print('In computeFlow')
     RADIUS = 1          # ? Not sure what we will want this to be
     VISCOSITY = 0.00089 # Viscosity of water at 25C
 
@@ -94,14 +96,14 @@ def computeFlow(vas_structure):
             flowMatrix[currentRow+nodeOrderLookup.index(edge[1])][numNodes+i] = -1
 
     # Similar to above, subtracting 1 because section 4's last node is also skipped, because no outward flow
-    currentRow += numNodes-1
+    currentRow = currentRow + numNodes-1
 
     # Section 3 of matrix (Row for each edge)
     for i, edge in enumerate(edgeOrderLookup):
         length = getLength(edge)
         flowMatrix[currentRow][numNodes+i] = 1
         flowMatrix[currentRow][numNodes+numEdges+i] = -((math.pi*RADIUS**4)/(8*VISCOSITY*length))
-        currentRow += 1
+        currentRow = currentRow + 1
 
     #
     # Seems equation (5) may be unnecessary, matrix is already square and solvable without it
@@ -113,7 +115,7 @@ def computeFlow(vas_structure):
         flowMatrix[currentRow][nodeOrderLookup.index(edge[0])] = 1
         flowMatrix[currentRow][nodeOrderLookup.index(edge[1])] = -1
         flowMatrix[currentRow][numNodes+numEdges+i] = -1
-        currentRow += 1
+        currentRow = currentRow + 1
 
 
     # All values in matrix 'B' are zero, except for first row for pressure at first node ('initial' section)
@@ -163,12 +165,12 @@ def printSolvedVariables(nodeLookup, edgeLookup, variables):
     index = 0
     for i, node in enumerate(nodeLookup):
         print('P'+str(i+1)+':', variables[index], ' Node:', node)
-        index += 1
+        index = index +  1
     
     for i, edge in enumerate(edgeLookup):
         print('Q'+str(i+1)+':', variables[index], ' Edge:', edge)
-        index += 1
+        index = index +  1
 
     for i, edge in enumerate(edgeLookup):
         print('𝝙P'+str(i+1)+':', variables[index], ' Edge:', edge)
-        index += 1
+        index = index +  1

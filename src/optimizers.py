@@ -7,6 +7,9 @@ objects, such as dicts of numpy arrays."""
 # https://github.com/HIPS/autograd/blob/master/autograd/misc/optimizers.py
 from __future__ import absolute_import
 from builtins import range
+import os
+from VasGen2 import VasGen2
+from equations import *
 
 import autograd.numpy as np
 from autograd.misc import flatten
@@ -17,14 +20,16 @@ def unflatten_optimizer(optimize):
     wrapped version that handles trees of nested containers (lists/tuples/dicts)
     with arrays/scalars at the leaves."""
     @wraps(optimize)
-    def _optimize(grad, x0, callback=None, *args, **kwargs):
+    def _optimize(grad, x0, vas_structure, callback=None, *args, **kwargs):
+        print('Optimzers: 21 = ', x0)
+        print('VasStruct: ', vas_structure)
         _x0, unflatten = flatten(x0)
         _grad = lambda x, i: flatten(grad(unflatten(x), i))[0]
         if callback:
             _callback = lambda x, i, g: callback(unflatten(x), i, unflatten(g))
         else:
             _callback = None
-        return unflatten(optimize(_grad, _x0, _callback, *args, **kwargs))
+        return unflatten(optimize(_grad, _x0, vas_structure, _callback, *args, **kwargs))
 
     return _optimize
 
@@ -53,28 +58,48 @@ def rmsprop(grad, x, callback=None, num_iters=100,
     return x
 
 @unflatten_optimizer
-def adam(grad, x,  callback=None, num_iters=100,
+def adamVas(grad, x, vas_structure, callback=None, num_iters=100,
          step_size=0.001, b1=0.9, b2=0.999, eps=10**-8):
     """Adam as described in http://arxiv.org/pdf/1412.6980.pdf.
     It's basically RMSprop with momentum and some correction terms."""
     m = np.zeros(len(x))
     v = np.zeros(len(x))
-    print('X = ', x, type(x))
+    # print('X = ', x, type(x))
 
     for i in range(0, num_iters):
-        print('HELLO')
+        # print('HELLO')
         g = grad(x,i)
-        print('        ', i, g)
+        # print('    g    =', g)
+        # print('    i    =', i)
+
         if callback: 
             callback(x, i, g)
         m = (1 - b1) * g      + b1 * m  # First  moment estimate.
         v = (1 - b2) * (g**2) + b2 * v  # Second moment estimate.
         mhat = m / (1 - b1**(i + 1))    # Bias correction.
         vhat = v / (1 - b2**(i + 1))
-        print('    m= ', m)
-        print('    m= ', v)
-        print('    m= ', mhat)
-        print('    m= ', vhat)
+        # print('    m    = ', m)
+        # print('    v    = ', v)
+        # print('    mhat = ', mhat)
+        # print('    vhat = ', vhat)
         x = x - step_size*mhat/(np.sqrt(vhat) + eps)
-        print('    x= ', x)
+        # print('THIS IS X: ', x)
+
+
+        # os.sys.exit()
+        # print('    x= ', x)
+        vas_structure.update_moveable_pts(x)
+        x = np.array(vas_structure.flatten_mvable_pts())
+        # print('After update: ', x)
+
+        # Solve for flow
+        flowDict = computeFlow(vas_structure)
+
+        # Add flows to image
+        vas_structure.add_flows_to_img(flowDict)
+        img = vas_structure.img
+        # path_to_diffuse_pngs = 'diffusePngs/'
+        sim_img_folder = 'simulation_imgs/imgs/'
+        sim_graph_folder = 'simulation_imgs/graphs/'
+        vas_structure.print_images(graph_name=sim_graph_folder+'test_graph'+str(i)+'.png', img_name=sim_img_folder+'test_img'+str(i)+'.png')
     return x
