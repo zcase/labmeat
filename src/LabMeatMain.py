@@ -295,7 +295,10 @@ def create_remove_imgs():
         for img_file in os.listdir(sim_graph_folder):
             os.remove(sim_graph_folder + img_file)
 
-
+def saveImageOne(iteration):
+    #print pathOut + fileName
+    fileName = RunNAME + str(iteration).rjust(3,'0')
+    fig.savefig(PATH + ResultsPATH + fileName + '.png', size=[1600,400])#, size=[1000,1000]) #, size=[700,700] IF 1000, renders each quadrant separately
 
 
 
@@ -324,20 +327,46 @@ if __name__ == "__main__":
 
 
     def fitness(fit_mvable_pts, iter):
+        print('fit', fit_mvable_pts)
         diffused_img = diffusion(fit_mvable_pts, img)
         return loss_health(diffused_img, iter)
 
 
     # Setup display figures
-
+    fig = plt.figure(figsize=(16, 4), facecolor='white')
+    # use LaTeX fonts in the plot
+    #plt.rc('font', family='serif')
+    ax_traj     = fig.add_subplot(141, frameon=True)
+    ax_phase    = fig.add_subplot(142, frameon=True)
+    ax_vecfield = fig.add_subplot(143, frameon=True)
+    ax_parameters = fig.add_subplot(144, frameon=True)
+    plt.show(block=False)
+    count = 1
     # Plot Data through callback
     def callback(mvable_pts, iter, g):
-
+        print('callback', mvable_pts, iter)
+        ####################################
+        # LOSS as a function of TIME
+        ax_traj.cla()
+        ax_traj.set_title('Train Loss')
+        ax_traj.set_xlabel('t')
+        ax_traj.set_ylabel('loss')
+        #colors =['b', 'b', 'g', 'g', 'r', 'r']
+        nowLoss = fitness(mvable_pts, iter)
+        all_loss.append(nowLoss)
+        time = np.arange(0, len(all_loss), 1)
+        
+        ax_traj.plot(time, all_loss, '-', linestyle = 'solid') #, color = colors[i]
+        ax_traj.set_xlim(time.min(), time.max())
         # plt.imshow(img)
         # plt.show()
         # print('     Callback: iter', iter)
         # print('     Callback: mvablepts: ', mvable_pts)
         # print('     Callback: g', g)
+        plt.legend(loc = "upper left")
+        plt.draw()
+        # saveImageOne(iter)
+        plt.pause(0.001)
         return 3
 
     pts = np.array(vas_structure.pts)
