@@ -247,9 +247,18 @@ def nonlinearDiffusion(mvble_pts, img):
         pt = mvble_pts[i]
         x = pt[0]
         y = pt[1]
+        int_x = 0
+        int_y = 0
 
-        int_x = int(np.array(mvble_pts[i][0]._value))
-        int_y = int(np.array(mvble_pts[i][1]._value))
+
+        if type(x) != type(np.array((1,1))) and type(x) != type(1):
+            int_x = int(np.array(mvble_pts[i][0]._value))
+            int_y = int(np.array(mvble_pts[i][1]._value))
+        else:
+            int_x = int(np.array(mvble_pts[i][0]))
+            int_y = int(np.array(mvble_pts[i][1]))
+        # int_x = int(np.array(mvble_pts[i][0]._value))
+        # int_y = int(np.array(mvble_pts[i][1]._value))
         np_pt = np.array([x, y])
 
         dist_0 = np.linalg.norm(np_pt - np.array([int_x-1, int_y-1]))
@@ -344,7 +353,7 @@ if __name__ == "__main__":
     count = 1
     # Plot Data through callback
     def callback(mvable_pts, iter, g):
-        print('callback', mvable_pts, iter)
+        # print('callback', mvable_pts, iter)
         ####################################
         # LOSS as a function of TIME
         ax_traj.cla()
