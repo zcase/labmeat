@@ -134,15 +134,12 @@ def computeFlow(vas_structure):
 
     
     flowMatrix = np.array(flowMatrix)
+    # https://stackoverflow.com/questions/44305456/why-am-i-getting-linalgerror-singular-matrix-from-grangercausalitytests
+    # flowMatrixdfDirty = flowMatrix+0.00001*np.random.rand(matrixSize, matrixSize)
     answerMatrix = np.array(answerMatrix)
 
-    # print(flowMatrix)
-    # print(answerMatrix)
-
-    # print(flowMatrix.shape)
-    # print(answerMatrix.shape)
-
     variables = np.linalg.solve(flowMatrix, answerMatrix)
+    # variables = np.linalg.solve(flowMatrixdfDirty, answerMatrix)
 
     # print('\nSolved Variables:\n')
     # printSolvedVariables(nodeOrderLookup, edgeOrderLookup, variables)

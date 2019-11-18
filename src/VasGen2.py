@@ -205,15 +205,15 @@ class VasGen2:
             cur  = list(new_mvable_pts)[i-2:i]
             x = float(cur[0])
             y = float(cur[1])
-            if x < self.min_range:
-                x = float(self.min_range)
-            elif x > self.max_range:
-                x = float(self.max_range)
+            if x < self.min_range+1:
+                x = float(self.min_range+1)
+            elif x > self.max_range-1:
+                x = float(self.max_range-1)
             
-            if y < self.min_range:
-                y = float(self.min_range)
-            elif y > self.max_range:
-                y = float(self.max_range)
+            if y < self.min_range+1:
+                y = float(self.min_range+1)
+            elif y > self.max_range-1:
+                y = float(self.max_range-1)
 
             cur = [x, y]
 

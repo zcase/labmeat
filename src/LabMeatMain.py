@@ -4,6 +4,12 @@ from equations import *
 from diffu2D_u0 import lab_meat_diffuse
 import os
 import math
+import matplotlib
+
+if os.sys.platform == "linux" or os.sys.platform == "linux2":
+    matplotlib.use('TKAgg')
+elif os.sys.platform == "darwin":
+    matplotlib.use('MacOSX')
 import matplotlib.pyplot as plt
 
 import imageio
@@ -207,6 +213,7 @@ def simulate(mvble_pts, t, vasc_structure):
 def diffusion(mvble_pts, img):
     # D is the defusion constant
     D = .225
+    B = D / 10
 
     #https://programtalk.com/python-examples/autograd.scipy.signal.convolve/
     for _ in range(0, 20): # how many times you run a diffusion update
@@ -216,6 +223,7 @@ def diffusion(mvble_pts, img):
 
         # the update to the img from one step of diffusion
         img = np.array(np.array(img) + np.array(deltaDiffusion) + np.array(nonlinearDiffusion(mvble_pts, img)))
+        img = img - (B*img)
     #     print(type(img))
     #     img_pic = np.pad(img, ((2, 3), (2, 3)), 'constant')
     #     plt.imsave('diffusePngs/TestDiffuse_'+str(i)+'.png', np.rot90(np.array(list(img_pic))), cmap='jet')
@@ -316,7 +324,7 @@ def saveImageOne(iteration):
 
 if __name__ == "__main__":
     start = timer()
-    total_iterations = 200
+    total_iterations = 100
     all_params = []
     all_loss = []
 
@@ -336,6 +344,7 @@ if __name__ == "__main__":
     flowDict = computeFlow(vas_structure)
     vas_structure.add_flows_to_img(flowDict)
     img = vas_structure.img
+    diffused_img = img
 
 
     def fitness(fit_mvable_pts, iter):
@@ -347,10 +356,10 @@ if __name__ == "__main__":
     fig = plt.figure(figsize=(16, 4), facecolor='white')
     # use LaTeX fonts in the plot
     #plt.rc('font', family='serif')
-    ax_traj     = fig.add_subplot(141, frameon=True)
-    ax_phase    = fig.add_subplot(142, frameon=True)
-    ax_vecfield = fig.add_subplot(143, frameon=True)
-    ax_parameters = fig.add_subplot(144, frameon=True)
+    ax_loss     = fig.add_subplot(141, frameon=True)
+    ax_node_graph    = fig.add_subplot(142, frameon=True)
+    ax_img = fig.add_subplot(143, frameon=True)
+    ax_diffused_img = fig.add_subplot(144, frameon=True)
     plt.show(block=False)
     count = 1
     # Plot Data through callback
@@ -358,32 +367,51 @@ if __name__ == "__main__":
         # print('callback', mvable_pts, iter)
         ####################################
         # LOSS as a function of TIME
-        ax_traj.cla()
-        ax_traj.set_title('Train Loss')
-        ax_traj.set_xlabel('t')
-        ax_traj.set_ylabel('loss')
+        ax_loss.cla()
+        ax_loss.set_title('Train Loss')
+        ax_loss.set_xlabel('t')
+        ax_loss.set_ylabel('loss')
         #colors =['b', 'b', 'g', 'g', 'r', 'r']
         nowLoss = fitness(mvable_pts, iter)
+        flowDict = computeFlow(vas_structure)
+        vas_structure.add_flows_to_img(flowDict)
+
         all_loss.append(nowLoss)
         time = np.arange(0, len(all_loss), 1)
         
-        ax_traj.plot(time, all_loss, '-', linestyle = 'solid') #, color = colors[i]
-        ax_traj.set_xlim(time.min(), time.max())
-        # plt.imshow(img)
-        # plt.show()
-        # print('     Callback: iter', iter)
-        # print('     Callback: mvablepts: ', mvable_pts)
-        # print('     Callback: g', g)
-        plt.legend(loc = "upper left")
+        ax_loss.plot(time, all_loss, '-', linestyle = 'solid', label='loss') #, color = colors[i]
+        ax_loss.set_xlim(time.min(), time.max())
+        ax_loss.legend(loc = "upper left")
+
+        ## Plots the Node Graph
+        ax_node_graph.cla()
+        for j, s in enumerate(vas_structure.tri.simplices):
+            p = np.array(vas_structure.pts)[s].mean(axis=0)
+            ax_node_graph.text(p[0], p[1], 'Cell #%d' % j, ha='center') # label triangles
+        ax_node_graph.triplot(np.array(vas_structure.pts)[:,0], np.array(vas_structure.pts)[:,1], vas_structure.tri.simplices)
+        ax_node_graph.plot(np.array(vas_structure.pts)[:,0], np.array(vas_structure.pts)[:,1], 'o')
+
+        # ==== Plot Img Version ==== #
+        pltimg = np.pad(np.array(vas_structure.img), ((2, 3), (2, 3)), 'constant')
+        # plt.imsave(img_name, np.rot90(pltimg), cmap='jet')
+        ax_img.imshow(np.rot90(pltimg))
+
+        # ==== Plot Diffused Img Version ==== #
+        diffused_img_plt1 = diffusion(mvable_pts, vas_structure.img)
+        diffused_img_plt1 = np.pad(np.array(diffused_img_plt1), ((2, 3), (2, 3)), 'constant')
+        ax_diffused_img.imshow(np.rot90(diffused_img_plt1))
+
         plt.draw()
         # saveImageOne(iter)
+
         plt.pause(0.001)
         return 3
 
     pts = np.array(vas_structure.pts)
     print('Starting AutoGrad\n')
     print('Original MvPts: ', vas_structure.moveable_pts)
-    optimized_mvble_pts = AdamTwo(grad(fitness), vas_structure.moveable_pts, vas_structure=vas_structure, step_size=1, num_iters=total_iterations, callback=callback)
+    # optimized_mvble_pts = AdamTwo(grad(fitness), vas_structure.moveable_pts, vas_structure=vas_structure, step_size=1, num_iters=total_iterations, callback=callback)
+    optimized_mvble_pts = AdamTwo(grad(fitness), vas_structure.moveable_pts, vas_structure=vas_structure, step_size=0.1, num_iters=total_iterations, callback=callback)
     print('Finished AutoGrad\n')
 
     print('    Optimized Pts:')
