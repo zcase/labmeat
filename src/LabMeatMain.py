@@ -32,6 +32,9 @@ from autograd.tracer import trace, Node
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
+def jax_sigmoid(x):
+    return 0.5 * (np.tanh(x / 2.) + 1)
+
 def gaussian(x):
     return np.exp(-x**2)
 
@@ -178,7 +181,7 @@ def loss_health(img, iter):
     total_loss = 0.0
     for ix,iy in np.ndindex(img.shape):
         loss = gaussian(img[ix,iy])
-        total_loss = total_loss + loss
+        total_loss = total_loss +  (loss *-1)
 
     print('LabMeatMain Line 171 LOSS:                           ', total_loss, iter)
     return total_loss
@@ -313,7 +316,7 @@ def saveImageOne(iteration):
 
 if __name__ == "__main__":
     start = timer()
-    total_iterations = 100
+    total_iterations = 200
     all_params = []
     all_loss = []
 
@@ -336,7 +339,6 @@ if __name__ == "__main__":
 
 
     def fitness(fit_mvable_pts, iter):
-        print('fit', fit_mvable_pts)
         diffused_img = diffusion(fit_mvable_pts, img)
         return loss_health(diffused_img, iter)
 
@@ -381,7 +383,7 @@ if __name__ == "__main__":
     pts = np.array(vas_structure.pts)
     print('Starting AutoGrad\n')
     print('Original MvPts: ', vas_structure.moveable_pts)
-    optimized_mvble_pts = AdamTwo(grad(fitness), vas_structure.moveable_pts, vas_structure=vas_structure, step_size=0.0001, num_iters=total_iterations, callback=callback)
+    optimized_mvble_pts = AdamTwo(grad(fitness), vas_structure.moveable_pts, vas_structure=vas_structure, step_size=1, num_iters=total_iterations, callback=callback)
     print('Finished AutoGrad\n')
 
     print('    Optimized Pts:')
