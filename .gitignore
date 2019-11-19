@@ -108,5 +108,6 @@ simulation_imgs/
 diffusePngs
 AutoDiff_Graph.gif
 AutoDiff_Img.gif
+AutoDiff_Figs.gif
 AutoGrad_startGraph.png 
 AutoGrad_startImg.png

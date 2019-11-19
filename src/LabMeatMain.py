@@ -295,6 +295,7 @@ def create_remove_imgs():
     path_to_diffuse_pngs = 'diffusePngs/'
     sim_img_folder = 'simulation_imgs/imgs/'
     sim_graph_folder = 'simulation_imgs/graphs/'
+    sim_fig_folder = 'simulation_imgs/figs/'
     if not os.path.exists(path_to_diffuse_pngs):
         os.makedirs(path_to_diffuse_pngs)
 
@@ -303,6 +304,9 @@ def create_remove_imgs():
 
     if not os.path.exists(sim_graph_folder):
         os.makedirs(sim_graph_folder)
+
+    if not os.path.exists(sim_fig_folder):
+        os.makedirs(sim_fig_folder)
 
     for img_file in os.listdir(path_to_diffuse_pngs):
         os.remove(path_to_diffuse_pngs + img_file)
@@ -315,10 +319,14 @@ def create_remove_imgs():
         for img_file in os.listdir(sim_graph_folder):
             os.remove(sim_graph_folder + img_file)
 
+    if os.path.exists(sim_fig_folder):
+        for img_file in os.listdir(sim_fig_folder):
+            os.remove(sim_fig_folder + img_file)
+
 def saveImageOne(iteration):
     #print pathOut + fileName
-    fileName = RunNAME + str(iteration).rjust(3,'0')
-    fig.savefig(PATH + ResultsPATH + fileName + '.png', size=[1600,400])#, size=[1000,1000]) #, size=[700,700] IF 1000, renders each quadrant separately
+    # fileName = RunNAME + str(iteration).rjust(3,'0')
+    fig.savefig('simulation_imgs/figs/' + str(iteration) + '.png', size=[1600,400])#, size=[1000,1000]) #, size=[700,700] IF 1000, renders each quadrant separately
 
 
 
@@ -405,7 +413,7 @@ if __name__ == "__main__":
         ax_diffused_img.imshow(np.rot90(diffused_img_plt1))
 
         plt.draw()
-        # saveImageOne(iter)
+        saveImageOne(iter)
 
         plt.pause(0.001)
         return 3
@@ -440,6 +448,8 @@ if __name__ == "__main__":
 
     sim_img_folder = 'simulation_imgs/imgs/'
     sim_graph_folder = 'simulation_imgs/graphs/'
+    sim_fig_folder = 'simulation_imgs/figs/'
 
     imageio.mimsave('AutoDiff_Img.gif', img_path_generator(sim_img_folder), fps=50)
     imageio.mimsave('AutoDiff_Graph.gif', img_path_generator(sim_graph_folder), fps=50)
+    imageio.mimsave('AutoDiff_Figs.gif', img_path_generator(sim_fig_folder), fps=50)
