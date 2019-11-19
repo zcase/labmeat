@@ -385,6 +385,7 @@ if __name__ == "__main__":
 
         ## Plots the Node Graph
         ax_node_graph.cla()
+        ax_node_graph.set_title('Node Graph')
         for j, s in enumerate(vas_structure.tri.simplices):
             p = np.array(vas_structure.pts)[s].mean(axis=0)
             ax_node_graph.text(p[0], p[1], 'Cell #%d' % j, ha='center') # label triangles
@@ -394,11 +395,13 @@ if __name__ == "__main__":
         # ==== Plot Img Version ==== #
         pltimg = np.pad(np.array(vas_structure.img), ((2, 3), (2, 3)), 'constant')
         # plt.imsave(img_name, np.rot90(pltimg), cmap='jet')
+        ax_img.set_title('Flow Image')
         ax_img.imshow(np.rot90(pltimg))
 
         # ==== Plot Diffused Img Version ==== #
         diffused_img_plt1 = diffusion(mvable_pts, vas_structure.img)
         diffused_img_plt1 = np.pad(np.array(diffused_img_plt1), ((2, 3), (2, 3)), 'constant')
+        ax_diffused_img.set_title('Diffused Image')
         ax_diffused_img.imshow(np.rot90(diffused_img_plt1))
 
         plt.draw()
@@ -429,13 +432,14 @@ if __name__ == "__main__":
     end = timer()
     print('Time per iteration: ', str((end-start) / total_iterations))
 
-    sim_img_folder = 'simulation_imgs/imgs/'
-    sim_graph_folder = 'simulation_imgs/graphs/'
-    for path_folder in [('Img', sim_img_folder), ('Graph', sim_graph_folder)]:
-        img_name, path_to_img_dir = path_folder
-        images = []
+    def img_path_generator(path_to_img_dir):
         for file_name in natsorted(os.listdir(path_to_img_dir), key=lambda y: y.lower()):
             if file_name.endswith('.png'):
                 file_path = os.path.join(path_to_img_dir, file_name)
-                images.append(imageio.imread(file_path))
-        imageio.mimsave('AutoDiff_'+img_name+'.gif', images, fps=50)
+                yield imageio.imread(file_path)
+
+    sim_img_folder = 'simulation_imgs/imgs/'
+    sim_graph_folder = 'simulation_imgs/graphs/'
+
+    imageio.mimsave('AutoDiff_Img.gif', img_path_generator(sim_img_folder), fps=50)
+    imageio.mimsave('AutoDiff_Graph.gif', img_path_generator(sim_graph_folder), fps=50)
