@@ -78,11 +78,12 @@ def adamVas(grad, x, vas_structure, callback=None, num_iters=100,
         v = (1 - b2) * (g**2) + b2 * v  # Second moment estimate.
         mhat = m / (1 - b1**(i + 1))    # Bias correction.
         vhat = v / (1 - b2**(i + 1))
-        # print('    m    = ', m)
-        # print('    v    = ', v)
+        # print('       m = ', m)
+        # print('       v = ', v)
+        # print('       x = ', x)
         # print('    mhat = ', mhat)
         # print('    vhat = ', vhat)
-        x = x - step_size*mhat/(np.sqrt(vhat) + eps)
+        x = x - step_size * mhat / (np.sqrt(vhat) + eps)
         # print('THIS IS X: ', x)
 
 
@@ -98,8 +99,9 @@ def adamVas(grad, x, vas_structure, callback=None, num_iters=100,
         # Add flows to image
         vas_structure.add_flows_to_img(flowDict)
         img = vas_structure.img
+        # print(vas_structure.diffused_img)
         # path_to_diffuse_pngs = 'diffusePngs/'
-        sim_img_folder = 'simulation_imgs/imgs/'
-        sim_graph_folder = 'simulation_imgs/graphs/'
-        vas_structure.print_images(graph_name=sim_graph_folder+'test_graph'+str(i)+'.png', img_name=sim_img_folder+'test_img'+str(i)+'.png')
+        # sim_img_folder = 'simulation_imgs/imgs/'
+        # sim_graph_folder = 'simulation_imgs/graphs/'
+        # vas_structure.print_images(graph_name=sim_graph_folder+'test_graph'+str(i)+'.png', img_name=sim_img_folder+'test_img'+str(i)+'.png')
     return x

@@ -9,9 +9,10 @@ import random
 
 
 class VasGen2:
-    def __init__(self, min_range=1, max_range=10, x=10, dim=2, num_of_nodes=20):
+    def __init__(self, min_range=1, max_range=10, x=10, side_nodes=True, dim=2, num_of_nodes=20):
         self.graph = dict()
         self.update_count = 0
+        self.has_side_nodes = side_nodes
 
         self.min_range = float(min_range)
         self.max_range = float(max_range)
@@ -34,6 +35,7 @@ class VasGen2:
 
         # Convert Edges to image
         self.img = self.convert_to_img(self.edges, max_range)
+        self.diffused_img = None
 
     # ====================== #
     # ==== Create Walls ==== #
@@ -78,7 +80,10 @@ class VasGen2:
 
         moveable_pts = pts
 
-        pts = pts + lt_wall + rht_wall + lt_startend + rht_startend
+        if self.has_side_nodes:
+            pts = pts + lt_wall + rht_wall + lt_startend + rht_startend
+        else:
+            pts = pts + lt_startend + rht_startend
         pts = sorted(pts ,key=lambda x: (-x[0],x[1]), reverse=True)
 
         return pts, moveable_pts
@@ -199,6 +204,8 @@ class VasGen2:
         pts_lst = []
         prev = None
         cur = None
+        # print('\n IN UPDATE PTS')
+        # print('new_mv_pts: ', new_mvable_pts)
         # for i in range(2, len(list(new_mvable_pts)._value)+2, 2):
         for i in range(2, len(list(new_mvable_pts))+2, 2):
             # cur  = list(new_mvable_pts)._value[i-2:i]
@@ -216,19 +223,29 @@ class VasGen2:
                 y = float(self.max_range-1)
 
             cur = [x, y]
+            # print('First Cur: ', cur)
 
-            if i > 2:
-                prev = [float(i) for i in prev]
-                cur = [float(i) for i in cur]
-                pts_lst = pts_lst + [prev, cur]
-            prev = cur
+            # if i > 2:
+            #     prev = [float(i) for i in prev]
+            #     cur = [float(i) for i in cur]
+            #     print('prev: ', prev)
+            #     print('cur : ', cur)
+            #     pts_lst = pts_lst + [prev, cur]
+            # prev = cur
+            pts_lst = pts_lst + [cur]
 
-        # print(pts_lst, type(pts_lst))
+        # print('\nhere: ')
+        # print(pts_lst, type(pts_lst), len(pts_lst))
+        # os.sys.exit()
         # print('hERE: ', list(new_mvable_pts)._value)
         self.moveable_pts = pts_lst
         # print('HERE 2:         ', self.moveable_pts)
 
-        pts = self.moveable_pts + self.left_wall + self.right_wall + self.left_wall_startend + self.right_wall_startend
+        pts = []
+        if self.has_side_nodes:
+            pts = self.moveable_pts + self.left_wall + self.right_wall + self.left_wall_startend + self.right_wall_startend
+        else:
+            pts = self.moveable_pts + self.left_wall_startend + self.right_wall_startend
         # print('VasGen2: ', np.array(pts), type(pts))
         self.pts = sorted(pts, key=lambda x: (-x[0],x[1]), reverse=True)
 

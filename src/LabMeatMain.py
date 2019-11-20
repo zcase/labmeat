@@ -4,6 +4,7 @@ from equations import *
 from diffu2D_u0 import lab_meat_diffuse
 import os
 import math
+import seaborn
 import matplotlib
 
 if os.sys.platform == "linux" or os.sys.platform == "linux2":
@@ -187,43 +188,37 @@ def loss_health(img, iter):
     total_loss = 0.0
     for ix,iy in np.ndindex(img.shape):
         loss = gaussian(img[ix,iy])
-        total_loss = total_loss +  (loss *-1)
+        total_loss = total_loss +  (loss * -1)
 
     print('LabMeatMain Line 171 LOSS:                           ', total_loss, iter)
     return total_loss
 
-def simulate(mvble_pts, t, vasc_structure):
-    # print('Int SIMULATE')
-    # Updtae Vascular Structure Movable Points
-    vasc_structure.update_moveable_pts(mvble_pts)
+def create_loss_map(img, iter):
+    h, w = np.array(img).shape
+    loss_map = []
+    for _ in range(w):
+        loss_map.append([0.0 for _ in range(h)])
 
-    # Solve for flow
-    flowDict = computeFlow(vasc_structure)
-
-    # Add flows to image
-    vasc_structure.add_flows_to_img(flowDict)
-
-    # vasc_structure.print_images(graph_name=sim_graph_folder + 'sim_graph_'+str(t)+'.png',
-    #                             img_name=sim_img_folder + 'sim_img_'+str(t)+'.png')
-
-    diffused_img = diffusion(vasc_structure.moveable_pts, vasc_structure.img)
-
-    return diffused_img
+    for ix,iy in np.ndindex(img.shape):
+        loss_map[ix][iy] = gaussian(img[ix,iy])
+    return loss_map
 
 def diffusion(mvble_pts, img):
     # D is the defusion constant
-    D = .225
-    B = D / 10
+    # D = .225
+    # B = D / 10
+    D = 0.025
+    B = D / 2
 
     #https://programtalk.com/python-examples/autograd.scipy.signal.convolve/
-    for _ in range(0, 20): # how many times you run a diffusion update
+    for _ in range(0, 50): # how many times you run a diffusion update
         convolve = np.array([[1*D, 1*D, 1*D],[1*D,-8*D,1*D], [1*D, 1*D, 1*D]])
         deltaDiffusion = sig.convolve(np.array(img), convolve)[1:-1, 1:-1] #take off first and last
         deltaDiffusion = deltaDiffusion + np.array(img)
 
         # the update to the img from one step of diffusion
         img = np.array(np.array(img) + np.array(deltaDiffusion) + np.array(nonlinearDiffusion(mvble_pts, img)))
-        img = img - (B*img)
+        img = img - (B * img)
     #     print(type(img))
     #     img_pic = np.pad(img, ((2, 3), (2, 3)), 'constant')
     #     plt.imsave('diffusePngs/TestDiffuse_'+str(i)+'.png', np.rot90(np.array(list(img_pic))), cmap='jet')
@@ -263,6 +258,7 @@ def nonlinearDiffusion(mvble_pts, img):
 
 
         if type(x) != type(np.array((1,1))) and type(x) != type(1):
+        # if type(x) != type(np.array((1,1))) and type(mvble_pts[i][0]) != np.float64:
             int_x = int(np.array(mvble_pts[i][0]._value))
             int_y = int(np.array(mvble_pts[i][1]._value))
         else:
@@ -343,8 +339,8 @@ if __name__ == "__main__":
 
     print('Creating Vas')
     # vas_structure = VascularGenerator(max_range=100, num_of_nodes=2)
-    # vas_structure = VasGen2(max_range=100, num_of_nodes=2)
-    vas_structure = VasGen2(max_range=20, num_of_nodes=2)
+    # vas_structure = VasGen2(max_range=100, num_of_nodes=10)
+    vas_structure = VasGen2(max_range=20, num_of_nodes=3, side_nodes=True)
     print('CreatED Vas')
     vas_structure.print_images(graph_name='AutoGrad_startGraph.png', img_name='AutoGrad_startImg.png')
 
@@ -353,10 +349,14 @@ if __name__ == "__main__":
     vas_structure.add_flows_to_img(flowDict)
     img = vas_structure.img
     diffused_img = img
+    # vas_structure.diffused_img = img
 
 
     def fitness(fit_mvable_pts, iter):
         diffused_img = diffusion(fit_mvable_pts, img)
+        # vas_structure.diffused_img = diffusion(fit_mvable_pts, img)
+        # diffused_img = vas_structure.diffused_img
+        # return loss_health(vas_structure.diffused_img, iter)
         return loss_health(diffused_img, iter)
 
 
@@ -364,14 +364,21 @@ if __name__ == "__main__":
     fig = plt.figure(figsize=(16, 4), facecolor='white')
     # use LaTeX fonts in the plot
     #plt.rc('font', family='serif')
-    ax_loss     = fig.add_subplot(141, frameon=True)
-    ax_node_graph    = fig.add_subplot(142, frameon=True)
-    ax_img = fig.add_subplot(143, frameon=True)
-    ax_diffused_img = fig.add_subplot(144, frameon=True)
+    ax_loss         = fig.add_subplot(151, frameon=True)
+    ax_node_graph   = fig.add_subplot(152, frameon=True)
+
+    ax_img          = fig.add_subplot(153, frameon=True)
+    ax_diffused_img = fig.add_subplot(154, frameon=True)
+    ax_loss_map     = fig.add_subplot(155, frameon=True)
+
     plt.show(block=False)
     count = 1
+    imgcolorbar = None
     # Plot Data through callback
     def callback(mvable_pts, iter, g):
+        # imgcolorbar.remove()
+        # diffusedcolorbar.remove()
+        # losscolorbar.remove()
         # print('callback', mvable_pts, iter)
         ####################################
         # LOSS as a function of TIME
@@ -381,12 +388,15 @@ if __name__ == "__main__":
         ax_loss.set_ylabel('loss')
         #colors =['b', 'b', 'g', 'g', 'r', 'r']
         nowLoss = fitness(mvable_pts, iter)
-        flowDict = computeFlow(vas_structure)
-        vas_structure.add_flows_to_img(flowDict)
-
+        # flowDict = computeFlow(vas_structure)
+        # vas_structure.add_flows_to_img(flowDict)
+        # nowLoss = loss_health(vas_structure.diffused_img, iter)
+        # nowLoss = loss_health(np.array(diffused_img), iter)
+        # print('NowLoss: ', nowLoss, type(nowLoss))
         all_loss.append(nowLoss)
         time = np.arange(0, len(all_loss), 1)
         
+        # print(all_loss, type(all_loss))
         ax_loss.plot(time, all_loss, '-', linestyle = 'solid', label='loss') #, color = colors[i]
         ax_loss.set_xlim(time.min(), time.max())
         ax_loss.legend(loc = "upper left")
@@ -401,20 +411,50 @@ if __name__ == "__main__":
         ax_node_graph.plot(np.array(vas_structure.pts)[:,0], np.array(vas_structure.pts)[:,1], 'o')
 
         # ==== Plot Img Version ==== #
-        pltimg = np.pad(np.array(vas_structure.img), ((2, 3), (2, 3)), 'constant')
+        # pltimg = np.pad(np.array(vas_structure.img), ((2, 3), (2, 3)), 'constant')
         # plt.imsave(img_name, np.rot90(pltimg), cmap='jet')
+        ax_img.cla()
+        imgcolorbar = None
         ax_img.set_title('Flow Image')
-        ax_img.imshow(np.rot90(pltimg))
+        ax_img.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+        ax_img.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
+        # ax_img.imshow(np.rot90(pltimg))
+        imgplot = ax_img.imshow(np.rot90(np.array(vas_structure.img)))
+        # imgcolorbar = fig.colorbar(mappable=imgplot, ax=ax_img, orientation='horizontal')
 
         # ==== Plot Diffused Img Version ==== #
+        ax_diffused_img.cla()
         diffused_img_plt1 = diffusion(mvable_pts, vas_structure.img)
-        diffused_img_plt1 = np.pad(np.array(diffused_img_plt1), ((2, 3), (2, 3)), 'constant')
+        # diffused_img_plt1 = np.pad(np.array(diffused_img_plt1), ((2, 3), (2, 3)), 'constant')
+        # diffused_img_plt1 = np.pad(np.array(vas_structure.diffused_img), ((2, 3), (2, 3)), 'constant')
         ax_diffused_img.set_title('Diffused Image')
-        ax_diffused_img.imshow(np.rot90(diffused_img_plt1))
+        ax_diffused_img.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+        ax_diffused_img.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
+        # print(np.array(vas_structure.diffused_img))
+        diffusedplot = ax_diffused_img.imshow(np.rot90(diffused_img_plt1))
+        # diffusedcolorbar = fig.colorbar(mappable=diffusedplot, ax=ax_diffused_img, orientation='horizontal')
+
+        # ax_diffused_img.imshow(np.rot90(np.array(vas_structure.diffused_img)._value))
+
+        # ==== Plot Diffused LOSS MAP ==== #
+        ax_loss_map.cla()
+        # loss_map = create_loss_map(vas_structure.diffused_img, iter)
+        loss_map = create_loss_map(np.array(diffused_img_plt1), iter)
+        # loss_map_plt1 = np.pad(np.array(loss_map), ((2, 3), (2, 3)), 'constant')
+        ax_loss_map.set_title('Diffusion Loss Map')
+        ax_loss_map.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+        ax_loss_map.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
+        loss_plot = ax_loss_map.imshow(np.rot90(np.array(loss_map)))
+        # losscolorbar = fig.colorbar(mappable=loss_plot, ax=ax_loss_map, orientation='horizontal')
+        # losscolorbar.set_clim(np.rot90(np.array(loss_map)).min(), np.rot90(np.array(loss_map).max()))
+
+
 
         plt.draw()
         saveImageOne(iter)
-
+        # imgcolorbar.remove()
+        # diffusedcolorbar.remove()
+        # losscolorbar.remove()
         plt.pause(0.001)
         return 3
 
@@ -422,7 +462,7 @@ if __name__ == "__main__":
     print('Starting AutoGrad\n')
     print('Original MvPts: ', vas_structure.moveable_pts)
     # optimized_mvble_pts = AdamTwo(grad(fitness), vas_structure.moveable_pts, vas_structure=vas_structure, step_size=1, num_iters=total_iterations, callback=callback)
-    optimized_mvble_pts = AdamTwo(grad(fitness), vas_structure.moveable_pts, vas_structure=vas_structure, step_size=0.1, num_iters=total_iterations, callback=callback)
+    optimized_mvble_pts = AdamTwo(grad(fitness), vas_structure.moveable_pts, vas_structure=vas_structure, step_size=0.2, num_iters=total_iterations, callback=callback)
     print('Finished AutoGrad\n')
 
     print('    Optimized Pts:')
@@ -446,10 +486,10 @@ if __name__ == "__main__":
                 file_path = os.path.join(path_to_img_dir, file_name)
                 yield imageio.imread(file_path)
 
-    sim_img_folder = 'simulation_imgs/imgs/'
-    sim_graph_folder = 'simulation_imgs/graphs/'
+    # sim_img_folder = 'simulation_imgs/imgs/'
+    # sim_graph_folder = 'simulation_imgs/graphs/'
     sim_fig_folder = 'simulation_imgs/figs/'
 
-    imageio.mimsave('AutoDiff_Img.gif', img_path_generator(sim_img_folder), fps=50)
-    imageio.mimsave('AutoDiff_Graph.gif', img_path_generator(sim_graph_folder), fps=50)
+    # imageio.mimsave('AutoDiff_Img.gif', img_path_generator(sim_img_folder), fps=50)
+    # imageio.mimsave('AutoDiff_Graph.gif', img_path_generator(sim_graph_folder), fps=50)
     imageio.mimsave('AutoDiff_Figs.gif', img_path_generator(sim_fig_folder), fps=50)
