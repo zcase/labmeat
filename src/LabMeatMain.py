@@ -45,68 +45,6 @@ def jax_sigmoid(x):
 def gaussian(x):
     return np.exp(-x**2)
 
-def random_walk():
-    path_to_diffuse_pngs = 'diffusePngs/'
-    sim_img_folder = 'simulation_imgs/imgs/'
-    sim_graph_folder = 'simulation_imgs/graphs/'
-
-    vas_structure = VascularGenerator(max_range=100, num_of_nodes=2)
-    vas_structure.print_images(graph_name='AutoGrad_startGraph.png', img_name='AutoGrad_startImg.png')
-    mvable_pts = tuple(vas_structure.flatten_mvable_pts())
-    print(mvable_pts)
-
-    test_movement = np.array([-30, -20, -10, 0, 10, 20, 30])
-
-    loss_lst = []
-    time_lst = []
-    for i in range(51):
-        vas_structure.img = simulate(mvable_pts, i, vas_structure)
-        vas_structure.print_images(graph_name=sim_graph_folder+'test_graph'+str(i)+'.png', img_name=sim_img_folder+'test_img'+str(i)+'.png')
-        # print(vas_structure.img)
-        loss = loss_health(vas_structure.img)
-        loss_lst.append(loss)
-        time_lst.append(i)
-        print(i, 'LOSS:', loss)
-
-        index = np.random.choice(vas_structure.moveable_pts.shape[0], 1, replace=False)
-        inc_index_x = np.random.choice(test_movement, 1, replace=False)
-        inc_index_y = np.random.choice(test_movement, 1, replace=False)
-
-        test_x = vas_structure.moveable_pts[index][0][0] + inc_index_x[0]
-        test_y = vas_structure.moveable_pts[index][0][1] + inc_index_y[0]
-
-        if test_x < 0:
-            test_x = 0
-        if test_x > 100:
-            test_x = 100
-
-        if test_y < 0:
-            test_y = 0
-        if test_y > 100:
-            test_y = 100
-
-        vas_structure.moveable_pts[index] = [test_x, test_y]
-        mvable_pts = tuple(vas_structure.flatten_mvable_pts())
-
-
-    # colors = ("red", "green", "blue")
-    fig = plt.figure()
-    plt.scatter(time_lst, loss_lst, alpha=0.5)
-    plt.title('Loss Over Time')
-    plt.xlabel('Time', fontsize=18)
-    plt.ylabel('Loss', fontsize=16)
-    fig.savefig('LossGraph.png')
-
-    images = []
-    for file_name in natsorted(os.listdir(sim_img_folder), key=lambda y: y.lower()):
-        if file_name.endswith('.png'):
-            file_path = os.path.join(sim_img_folder, file_name)
-            images.append(imageio.imread(file_path))
-    imageio.mimsave('Vasc_Random_Walk.gif', images, fps=50)
-    os.sys.exit()
-
-
-
 def get_submatrix_add(lst_matrix, center_pt_tuple, convolution, submatrix_size=2):
     w, h = len(lst_matrix), len(lst_matrix[0])
     orig_row, orig_col = center_pt_tuple
@@ -188,7 +126,7 @@ def loss_health(img, iter):
     total_loss = 0.0
     for ix,iy in np.ndindex(img.shape):
         loss = gaussian(img[ix,iy])
-        total_loss = total_loss +  (loss * -1)
+        total_loss = total_loss +  (loss * 1)
 
     print('LabMeatMain Line 171 LOSS:                           ', total_loss, iter)
     return total_loss

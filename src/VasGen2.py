@@ -196,9 +196,46 @@ class VasGen2:
 
         return flat_list
 
+
+    def checkIfDuplicates(self, listOfElems):
+        ''' Check if given list contains any duplicates '''
+        setOfElems = set()
+        dup_idx_lst = []
+        for idx, elem in enumerate([(round(pt[0], 2), round(pt[1], 2)) for pt in listOfElems]):
+            if elem in setOfElems:
+                dup_idx_lst.append(idx)
+            else:
+                setOfElems.add(elem)
+
+        return dup_idx_lst
+
+    def remove_dup_pts(self):
+
+        dup_idx_lst = self.checkIfDuplicates(self.moveable_pts)
+        while(dup_idx_lst):
+            for dup_idx in dup_idx_lst:
+                pt_val_lst = self.moveable_pts[dup_idx]
+                noise = [random.uniform(-1, 1) for _ in range(2)]
+                pt_val_lst = pt_val_lst
+                pt_val_lst = [sum(x) for x in zip(pt_val_lst, noise)]
+                x = pt_val_lst[0]
+                y = pt_val_lst[1]
+                if x < self.min_range+1:
+                    x = float(self.min_range+1)
+                elif x > self.max_range-1:
+                    x = float(self.max_range-1)
+                
+                if y < self.min_range+1:
+                    y = float(self.min_range+1)
+                elif y > self.max_range-1:
+                    y = float(self.max_range-1)
+                pt_val_lst = [x, y]
+                self.moveable_pts[dup_idx] = pt_val_lst
+                dup_idx_lst = self.checkIfDuplicates(self.moveable_pts)
+
     def update_moveable_pts(self, new_mvable_pts):
         # print('In update_moveable_pts')
-        # print('VasGen2 193: ', new_mvable_pts)
+        # print('VasGen2 236: ', new_mvable_pts)
         # print(type(new_mvable_pts))
         self.graph = dict()
         pts_lst = []
@@ -239,6 +276,8 @@ class VasGen2:
         # os.sys.exit()
         # print('hERE: ', list(new_mvable_pts)._value)
         self.moveable_pts = pts_lst
+        self.remove_dup_pts()
+
         # print('HERE 2:         ', self.moveable_pts)
 
         pts = []
