@@ -38,6 +38,7 @@ from autograd.tracer import trace, Node
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
+    # return x
 
 def jax_sigmoid(x):
     return 0.5 * (np.tanh(x / 2.) + 1)
@@ -124,9 +125,11 @@ def loss_health(img, iter):
     # 2D array of neutrient values
     # sum of sigmoid values (high N is low low, low N is high loss)
     total_loss = 0.0
-    for ix,iy in np.ndindex(img.shape):
-        loss = gaussian(img[ix,iy])
-        total_loss = total_loss +  (loss * 1)
+    # for ix,iy in np.ndindex(img.shape):
+    #     loss = gaussian(img[ix,iy])
+    #     total_loss = total_loss +  (loss * 1)
+    ideal = np.ones(img.shape)[1:,1:]
+    total_loss = np.sum(np.abs(ideal - img[1:,1:]))
 
     print('LabMeatMain Line 171 LOSS:                           ', total_loss, iter)
     return total_loss
@@ -137,22 +140,31 @@ def create_loss_map(img, iter):
     for _ in range(w):
         loss_map.append([0.0 for _ in range(h)])
 
-    for ix,iy in np.ndindex(img.shape):
-        loss_map[ix][iy] = gaussian(img[ix,iy])
-    return loss_map
+    # for ix,iy in np.ndindex(img.shape):
+    #     loss_map[ix][iy] = gaussian(img[ix,iy])
+    ideal = np.ones(img.shape)[1:,1:]
+    val = np.abs(ideal - img[1:,1:])
+    return val
 
 def diffusion(mvble_pts, img):
     # D is the defusion constant
     # D = .225
     # B = D / 10
-    D = 0.025
-    B = D / 2
+    # print(np.array(img))
+    # img = img[1:-1, 1:-1]
+    # os.sys.exit()
+    D = 0.02
+    B = D / 4
+
+
+    # D = 0.00000001
+    # B = D / 4
 
     #https://programtalk.com/python-examples/autograd.scipy.signal.convolve/
-    for _ in range(0, 50): # how many times you run a diffusion update
+    for _ in range(0, 60): # how many times you run a diffusion update
         convolve = np.array([[1*D, 1*D, 1*D],[1*D,-8*D,1*D], [1*D, 1*D, 1*D]])
         deltaDiffusion = sig.convolve(np.array(img), convolve)[1:-1, 1:-1] #take off first and last
-        deltaDiffusion = deltaDiffusion + np.array(img)
+        # deltaDiffusion = deltaDiffusion + np.array(img)
 
         # the update to the img from one step of diffusion
         img = np.array(np.array(img) + np.array(deltaDiffusion) + np.array(nonlinearDiffusion(mvble_pts, img)))
@@ -197,7 +209,7 @@ def nonlinearDiffusion(mvble_pts, img):
 
         if type(x) != type(np.array((1,1))) and type(x) != type(1):
         # if type(x) != type(np.array((1,1))) and type(mvble_pts[i][0]) != np.float64:
-            int_x = int(np.array(mvble_pts[i][0]._value))
+            int_x = int(np.array(mvble_pts[i][0]._value)) 
             int_y = int(np.array(mvble_pts[i][1]._value))
         else:
             int_x = int(np.array(mvble_pts[i][0]))
@@ -206,21 +218,34 @@ def nonlinearDiffusion(mvble_pts, img):
         # int_y = int(np.array(mvble_pts[i][1]._value))
         np_pt = np.array([x, y])
 
-        dist_0 = np.linalg.norm(np_pt - np.array([int_x-1, int_y-1]))
-        dist_1 = np.linalg.norm(np_pt - np.array([int_x, int_y-1]))
-        dist_2 = np.linalg.norm(np_pt - np.array([int_x+1, int_y-1]))
+        inc = 0.5
+        dist_0 = np.linalg.norm(np_pt - np.array([int_x-1 + inc, int_y-1 + inc]))
+        dist_1 = np.linalg.norm(np_pt - np.array([int_x + inc, int_y-1 + inc]))
+        dist_2 = np.linalg.norm(np_pt - np.array([int_x+1 + inc, int_y-1 + inc]))
 
-        dist_3 = np.linalg.norm(np_pt - np.array([int_x-1, int_y]))
-        # dist_4 = np.linalg.norm(np_pt - np.array([int_x, int_y]))
-        dist_5 = np.linalg.norm(np_pt - np.array([int_x+1, int_y]))
+        dist_3 = np.linalg.norm(np_pt - np.array([int_x-1 + inc, int_y + inc]))
+        dist_4 = np.linalg.norm(np_pt - np.array([int_x + inc, int_y + inc]))
+        dist_5 = np.linalg.norm(np_pt - np.array([int_x+1 + inc, int_y + inc]))
 
-        dist_6 = np.linalg.norm(np_pt - np.array([int_x-1, int_y+1]))
-        dist_7 = np.linalg.norm(np_pt - np.array([int_x, int_y+1]))
-        dist_8 = np.linalg.norm(np_pt - np.array([int_x+1, int_y+1]))
+        dist_6 = np.linalg.norm(np_pt - np.array([int_x-1 + inc, int_y+1 + inc]))
+        dist_7 = np.linalg.norm(np_pt - np.array([int_x + inc, int_y+1 + inc]))
+        dist_8 = np.linalg.norm(np_pt - np.array([int_x+1 + inc, int_y+1 + inc]))
 
-        X = -sigmoid(dist_0 - 1) - sigmoid(dist_1 - 1) - sigmoid(dist_2 - 1) - sigmoid(dist_3 - 1) - sigmoid(dist_5 - 1) - sigmoid(dist_6 - 1) - sigmoid(dist_7 - 1) - sigmoid(dist_8 - 1)
+        # X = - sigmoid(dist_0 - 1) - sigmoid(dist_1 - 1) - sigmoid(dist_2 - 1) - sigmoid(dist_3 - 1) - sigmoid(dist_4 - 1) - sigmoid(dist_5 - 1) - sigmoid(dist_6 - 1) - sigmoid(dist_7 - 1) - sigmoid(dist_8 - 1)
+        # X = -sigmoid(dist_0 - 1 - inc) - sigmoid(dist_1 - 1 - inc) - sigmoid(dist_2 - 1 - inc) - sigmoid(dist_3 - 1 - inc) - sigmoid(dist_5 - 1 + inc) - sigmoid(dist_6 - 1 + inc) - sigmoid(dist_7 - 1 + inc) - sigmoid(dist_8 - 1 + inc)
+        # X = -sigmoid(dist_0 - 1 - inc) - sigmoid(dist_1 - 1) - sigmoid(dist_2 - 1 + inc) - sigmoid(dist_3 - 1 - inc) - sigmoid(dist_5 - 1 + inc) - sigmoid(dist_6 - 1 - inc) - sigmoid(dist_7 - 1) - sigmoid(dist_8 - 1 + inc)
+        # X = -sigmoid(dist_0 - 1) + inc - sigmoid(dist_1 - 1) + inc - sigmoid(dist_2 - 1) + inc - sigmoid(dist_3 - 1) + inc - sigmoid(dist_5 - 1) + inc - sigmoid(dist_6 - 1) + inc - sigmoid(dist_7 - 1) + inc - sigmoid(dist_8 - 1) + inc
+        # X = -sigmoid(dist_0+ inc - 1) - sigmoid(dist_1+ inc - 1) - sigmoid(dist_2+ inc - 1) - sigmoid(dist_3 + inc- 1) - sigmoid(dist_5+ inc - 1) - sigmoid(dist_6+ inc - 1) - sigmoid(dist_7+ inc - 1) - sigmoid(dist_8+ inc - 1)
+        X = -dist_0 - dist_1 - dist_2 - dist_3 - dist_5 - dist_6 - dist_7 - dist_8
+        # X = -dist_0 - dist_1 - dist_2 - dist_3 + dist_5 + dist_6 + dist_7 + dist_8
 
         convolution = [[sigmoid(dist_0 - 1), sigmoid(dist_1 - 1), sigmoid(dist_2 - 1)], [sigmoid(dist_3 - 1), X, sigmoid(dist_5 - 1)], [sigmoid(dist_6 - 1), sigmoid(dist_7 - 1), sigmoid(dist_8 - 1)]]
+        # convolution = [[sigmoid(dist_0 - 1 - inc), sigmoid(dist_1 - 1 - inc), sigmoid(dist_2 - 1 - inc)], [sigmoid(dist_3 - 1 - inc), X, sigmoid(dist_5 - 1 + inc)], [sigmoid(dist_6 - 1 + inc), sigmoid(dist_7 - 1 + inc), sigmoid(dist_8 - 1 + inc)]]
+        # convolution = [[sigmoid(dist_0 - 1 - inc), sigmoid(dist_1 - 1), sigmoid(dist_2 - 1 + inc)], [sigmoid(dist_3 - 1 - inc), X, sigmoid(dist_5 - 1 + inc)], [sigmoid(dist_6 - 1 - inc), sigmoid(dist_7 - 1), sigmoid(dist_8 - 1 + inc)]]
+        # convolution = [[sigmoid(dist_0 - 1) + inc, sigmoid(dist_1 - 1) + inc, sigmoid(dist_2 - 1) + inc], [sigmoid(dist_3 - 1 + inc), X + inc, sigmoid(dist_5 - 1) + inc], [sigmoid(dist_6 - 1) + inc, sigmoid(dist_7 - 1) + inc, sigmoid(dist_8 - 1) + inc]]
+        # convolution = [[sigmoid(dist_0+ inc - 1), sigmoid(dist_1+ inc - 1), sigmoid(dist_2+ inc - 1)], [sigmoid(dist_3+ inc - 1), X+ inc, sigmoid(dist_5+ inc - 1)], [sigmoid(dist_6+ inc - 1), sigmoid(dist_7+ inc - 1), sigmoid(dist_8+ inc - 1)]]
+        # convolution = [[-dist_0, -dist_1, -dist_2], [-dist_3, X, dist_5], [dist_6, dist_7, dist_8]]
+        # convolution = [[dist_0, dist_1, dist_2], [dist_3, X, dist_5], [dist_6, dist_7, dist_8]]
         deltaDomain2 = get_submatrix_add(deltaDomain2, (int_x, int_y), convolution)
 
     return deltaDomain2
@@ -266,7 +291,7 @@ def saveImageOne(iteration):
 
 if __name__ == "__main__":
     start = timer()
-    total_iterations = 100
+    total_iterations = 200
     all_params = []
     all_loss = []
 
@@ -278,7 +303,7 @@ if __name__ == "__main__":
     print('Creating Vas')
     # vas_structure = VascularGenerator(max_range=100, num_of_nodes=2)
     # vas_structure = VasGen2(max_range=100, num_of_nodes=10)
-    vas_structure = VasGen2(max_range=20, num_of_nodes=3, side_nodes=True)
+    vas_structure = VasGen2(max_range=20, num_of_nodes=4, side_nodes=False)
     print('CreatED Vas')
     vas_structure.print_images(graph_name='AutoGrad_startGraph.png', img_name='AutoGrad_startImg.png')
 
@@ -357,7 +382,7 @@ if __name__ == "__main__":
         ax_img.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
         ax_img.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
         # ax_img.imshow(np.rot90(pltimg))
-        imgplot = ax_img.imshow(np.rot90(np.array(vas_structure.img)))
+        imgplot = ax_img.imshow(np.rot90(np.array(vas_structure.img)[1:,1:]))
         # imgcolorbar = fig.colorbar(mappable=imgplot, ax=ax_img, orientation='horizontal')
 
         # ==== Plot Diffused Img Version ==== #
@@ -369,7 +394,7 @@ if __name__ == "__main__":
         ax_diffused_img.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
         ax_diffused_img.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
         # print(np.array(vas_structure.diffused_img))
-        diffusedplot = ax_diffused_img.imshow(np.rot90(diffused_img_plt1))
+        diffusedplot = ax_diffused_img.imshow(np.rot90(diffused_img_plt1[1:,1:]), vmin=0, vmax=1)
         # diffusedcolorbar = fig.colorbar(mappable=diffusedplot, ax=ax_diffused_img, orientation='horizontal')
 
         # ax_diffused_img.imshow(np.rot90(np.array(vas_structure.diffused_img)._value))
@@ -382,7 +407,7 @@ if __name__ == "__main__":
         ax_loss_map.set_title('Diffusion Loss Map')
         ax_loss_map.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
         ax_loss_map.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
-        loss_plot = ax_loss_map.imshow(np.rot90(np.array(loss_map)))
+        loss_plot = ax_loss_map.imshow(np.rot90(np.array(loss_map)), vmin=0, vmax=1)
         # losscolorbar = fig.colorbar(mappable=loss_plot, ax=ax_loss_map, orientation='horizontal')
         # losscolorbar.set_clim(np.rot90(np.array(loss_map)).min(), np.rot90(np.array(loss_map).max()))
 
@@ -399,8 +424,9 @@ if __name__ == "__main__":
     pts = np.array(vas_structure.pts)
     print('Starting AutoGrad\n')
     print('Original MvPts: ', vas_structure.moveable_pts)
-    # optimized_mvble_pts = AdamTwo(grad(fitness), vas_structure.moveable_pts, vas_structure=vas_structure, step_size=1, num_iters=total_iterations, callback=callback)
-    optimized_mvble_pts = AdamTwo(grad(fitness), vas_structure.moveable_pts, vas_structure=vas_structure, step_size=0.2, num_iters=total_iterations, callback=callback)
+    optimized_mvble_pts = AdamTwo(grad(fitness), vas_structure.moveable_pts, vas_structure=vas_structure, step_size=.5, num_iters=total_iterations, callback=callback)
+    # optimized_mvble_pts = AdamTwo(grad(fitness), vas_structure.moveable_pts, vas_structure=vas_structure, step_size=0.005, num_iters=total_iterations, callback=callback)
+    # optimized_mvble_pts = AdamTwo(grad(fitness), vas_structure.moveable_pts, vas_structure=vas_structure, step_size=0.01, num_iters=total_iterations, callback=callback)
     print('Finished AutoGrad\n')
 
     print('    Optimized Pts:')

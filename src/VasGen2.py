@@ -201,7 +201,7 @@ class VasGen2:
         ''' Check if given list contains any duplicates '''
         setOfElems = set()
         dup_idx_lst = []
-        for idx, elem in enumerate([(round(pt[0], 2), round(pt[1], 2)) for pt in listOfElems]):
+        for idx, elem in enumerate([(round(pt[0], 6), round(pt[1], 6)) for pt in listOfElems]):
             if elem in setOfElems:
                 dup_idx_lst.append(idx)
             else:
@@ -210,7 +210,6 @@ class VasGen2:
         return dup_idx_lst
 
     def remove_dup_pts(self):
-
         dup_idx_lst = self.checkIfDuplicates(self.moveable_pts)
         while(dup_idx_lst):
             for dup_idx in dup_idx_lst:

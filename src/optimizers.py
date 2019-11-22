@@ -91,7 +91,7 @@ def adamVas(grad, x, vas_structure, callback=None, num_iters=100,
         # print('    x= ', x)
         vas_structure.update_moveable_pts(x)
         x = np.array(vas_structure.flatten_mvable_pts())
-        # print('After update: ', x)
+        print('After update: ', x)
 
         # Solve for flow
         flowDict = computeFlow(vas_structure)
