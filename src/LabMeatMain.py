@@ -36,6 +36,9 @@ import autograd.scipy.signal as sig
 from timeit import default_timer as timer
 from autograd.tracer import trace, Node
 
+def exp_decay(x):
+    return np.exp(-x)
+
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
     # return x
@@ -122,29 +125,42 @@ def getSampleParameters():
     return (5, 25) #3 15 works
 
 def loss_health(img, iter):
+    # np_img = np.array(img)
+    # mn, mx = np_img.min(), np_img.max()
+    # np_img = (np_img - mn) / (mx - mn)
     # 2D array of neutrient values
     # sum of sigmoid values (high N is low low, low N is high loss)
     total_loss = 0.0
-    # for ix,iy in np.ndindex(img.shape):
-    #     loss = gaussian(img[ix,iy])
-    #     total_loss = total_loss +  (loss * 1)
-    ideal = np.ones(img.shape)[1:,1:]
-    total_loss = np.sum(np.abs(ideal - img[1:,1:]))
+    for ix,iy in np.ndindex(img.shape):
+        loss = 1 / (1 + img[ix,iy])
+        # loss = exp_decay(img[ix,iy])
+        # loss = gaussian(img[ix,iy]/img.mean()
+        total_loss = total_loss +  (loss)
+    # ideal = np.ones(img.shape)[1:,1:]
+    # total_loss = np.sum(np.abs(ideal - (img[1:,1:] /img.mean())))
+    # total_loss = np.abs(ideal - (img[1:,1:])).mean()
+    # total_loss = np.mean(1 / (1 + img[1:,1:])
 
     print('LabMeatMain Line 171 LOSS:                           ', total_loss, iter)
     return total_loss
 
 def create_loss_map(img, iter):
+    # np_img = np.array(img)
+    # mn, mx = np_img.min(), np_img.max()
+    # np_img = (np_img - mn) / (mx - mn)
     h, w = np.array(img).shape
     loss_map = []
     for _ in range(w):
         loss_map.append([0.0 for _ in range(h)])
 
-    # for ix,iy in np.ndindex(img.shape):
-    #     loss_map[ix][iy] = gaussian(img[ix,iy])
-    ideal = np.ones(img.shape)[1:,1:]
-    val = np.abs(ideal - img[1:,1:])
-    return val
+    for ix,iy in np.ndindex(img.shape):
+        # loss_map[ix][iy] = exp_decay(img[ix,iy])
+        loss_map[ix][iy] = 1 / (1 + img[ix,iy])
+
+    # ideal = np.ones(img.shape)[1:,1:]
+    # val = np.abs(ideal - np_img[1:,1:])
+    return np.array(loss_map)[1:,1:]
+    # return val
 
 def diffusion(mvble_pts, img):
     # D is the defusion constant
@@ -153,11 +169,11 @@ def diffusion(mvble_pts, img):
     # print(np.array(img))
     # img = img[1:-1, 1:-1]
     # os.sys.exit()
-    D = 0.02
-    B = D / 4
+    D = 0.008
+    B = D / 10
 
 
-    # D = 0.00000001
+    # D = 0.00000000
     # B = D / 4
 
     #https://programtalk.com/python-examples/autograd.scipy.signal.convolve/
@@ -167,8 +183,9 @@ def diffusion(mvble_pts, img):
         # deltaDiffusion = deltaDiffusion + np.array(img)
 
         # the update to the img from one step of diffusion
-        img = np.array(np.array(img) + np.array(deltaDiffusion) + np.array(nonlinearDiffusion(mvble_pts, img)))
+        img = np.array(np.array(img) + np.array(deltaDiffusion) + np.array(nonlinearDiffusion(mvble_pts, img, D)))
         img = img - (B * img)
+        img = np.clip(img, 0, 1e9)
     #     print(type(img))
     #     img_pic = np.pad(img, ((2, 3), (2, 3)), 'constant')
     #     plt.imsave('diffusePngs/TestDiffuse_'+str(i)+'.png', np.rot90(np.array(list(img_pic))), cmap='jet')
@@ -182,16 +199,17 @@ def diffusion(mvble_pts, img):
     # imageio.mimsave('VascDiffuse.gif', images, fps=5)
 
     # newimg = np.array(minmax_scale(np.array(img._value)))
-    np_img = np.array(img)
-    mn, mx = np_img.min(), np_img.max()
-    np_img = (np_img - mn) / (mx - mn)
-    return np_img
+    # np_img = np.array(img)
+    # mn, mx = np_img.min(), np_img.max()
+    # np_img = (np_img - mn) / (mx - mn)
+    # print(np.array(img).max(), np.array(img).min())
+    return np.array(img)
 
 def euclidean(v1, v2):
     return sum((p-q)**2 for p, q in zip(v1, v2)) ** .5
 
 # None linear diffusion (compute each convoution for each location)
-def nonlinearDiffusion(mvble_pts, img):
+def nonlinearDiffusion(mvble_pts, img, D):
     #http://greg-ashton.physics.monash.edu/applying-python-functions-in-moving-windows.html
     #https://stackoverflow.com/questions/12816293/vectorize-this-convolution-type-loop-more-efficiently-in-numpy
     h, w = np.array(img).shape
@@ -232,14 +250,17 @@ def nonlinearDiffusion(mvble_pts, img):
         dist_8 = np.linalg.norm(np_pt - np.array([int_x+1 + inc, int_y+1 + inc]))
 
         # X = - sigmoid(dist_0 - 1) - sigmoid(dist_1 - 1) - sigmoid(dist_2 - 1) - sigmoid(dist_3 - 1) - sigmoid(dist_4 - 1) - sigmoid(dist_5 - 1) - sigmoid(dist_6 - 1) - sigmoid(dist_7 - 1) - sigmoid(dist_8 - 1)
+        X = - exp_decay(dist_0 - 1) - exp_decay(dist_1 - 1) - exp_decay(dist_2 - 1) - exp_decay(dist_3 - 1) - exp_decay(dist_4 - 1) - exp_decay(dist_5 - 1) - exp_decay(dist_6 - 1) - exp_decay(dist_7 - 1) - exp_decay(dist_8 - 1)
+        # X = - sigmoid(dist_0 - 1) - sigmoid(dist_1 - 1) - sigmoid(dist_2 - 1) - sigmoid(dist_3 - 1) - sigmoid(dist_5 - 1) - sigmoid(dist_6 - 1) - sigmoid(dist_7 - 1) - sigmoid(dist_8 - 1)
         # X = -sigmoid(dist_0 - 1 - inc) - sigmoid(dist_1 - 1 - inc) - sigmoid(dist_2 - 1 - inc) - sigmoid(dist_3 - 1 - inc) - sigmoid(dist_5 - 1 + inc) - sigmoid(dist_6 - 1 + inc) - sigmoid(dist_7 - 1 + inc) - sigmoid(dist_8 - 1 + inc)
         # X = -sigmoid(dist_0 - 1 - inc) - sigmoid(dist_1 - 1) - sigmoid(dist_2 - 1 + inc) - sigmoid(dist_3 - 1 - inc) - sigmoid(dist_5 - 1 + inc) - sigmoid(dist_6 - 1 - inc) - sigmoid(dist_7 - 1) - sigmoid(dist_8 - 1 + inc)
         # X = -sigmoid(dist_0 - 1) + inc - sigmoid(dist_1 - 1) + inc - sigmoid(dist_2 - 1) + inc - sigmoid(dist_3 - 1) + inc - sigmoid(dist_5 - 1) + inc - sigmoid(dist_6 - 1) + inc - sigmoid(dist_7 - 1) + inc - sigmoid(dist_8 - 1) + inc
         # X = -sigmoid(dist_0+ inc - 1) - sigmoid(dist_1+ inc - 1) - sigmoid(dist_2+ inc - 1) - sigmoid(dist_3 + inc- 1) - sigmoid(dist_5+ inc - 1) - sigmoid(dist_6+ inc - 1) - sigmoid(dist_7+ inc - 1) - sigmoid(dist_8+ inc - 1)
-        X = -dist_0 - dist_1 - dist_2 - dist_3 - dist_5 - dist_6 - dist_7 - dist_8
+        # X = -dist_0 - dist_1 - dist_2 - dist_3 -dist_4 - dist_5 - dist_6 - dist_7 - dist_8
         # X = -dist_0 - dist_1 - dist_2 - dist_3 + dist_5 + dist_6 + dist_7 + dist_8
 
-        convolution = [[sigmoid(dist_0 - 1), sigmoid(dist_1 - 1), sigmoid(dist_2 - 1)], [sigmoid(dist_3 - 1), X, sigmoid(dist_5 - 1)], [sigmoid(dist_6 - 1), sigmoid(dist_7 - 1), sigmoid(dist_8 - 1)]]
+        # convolution = [[sigmoid(dist_0 - 1), sigmoid(dist_1 - 1), sigmoid(dist_2 - 1)], [sigmoid(dist_3 - 1), X, sigmoid(dist_5 - 1)], [sigmoid(dist_6 - 1), sigmoid(dist_7 - 1), sigmoid(dist_8 - 1)]]
+        convolution = [[exp_decay(dist_0 - 1), exp_decay(dist_1 - 1), exp_decay(dist_2 - 1)], [exp_decay(dist_3 - 1), X, exp_decay(dist_5 - 1)], [exp_decay(dist_6 - 1), exp_decay(dist_7 - 1), exp_decay(dist_8 - 1)]]
         # convolution = [[sigmoid(dist_0 - 1 - inc), sigmoid(dist_1 - 1 - inc), sigmoid(dist_2 - 1 - inc)], [sigmoid(dist_3 - 1 - inc), X, sigmoid(dist_5 - 1 + inc)], [sigmoid(dist_6 - 1 + inc), sigmoid(dist_7 - 1 + inc), sigmoid(dist_8 - 1 + inc)]]
         # convolution = [[sigmoid(dist_0 - 1 - inc), sigmoid(dist_1 - 1), sigmoid(dist_2 - 1 + inc)], [sigmoid(dist_3 - 1 - inc), X, sigmoid(dist_5 - 1 + inc)], [sigmoid(dist_6 - 1 - inc), sigmoid(dist_7 - 1), sigmoid(dist_8 - 1 + inc)]]
         # convolution = [[sigmoid(dist_0 - 1) + inc, sigmoid(dist_1 - 1) + inc, sigmoid(dist_2 - 1) + inc], [sigmoid(dist_3 - 1 + inc), X + inc, sigmoid(dist_5 - 1) + inc], [sigmoid(dist_6 - 1) + inc, sigmoid(dist_7 - 1) + inc, sigmoid(dist_8 - 1) + inc]]
@@ -248,7 +269,7 @@ def nonlinearDiffusion(mvble_pts, img):
         # convolution = [[dist_0, dist_1, dist_2], [dist_3, X, dist_5], [dist_6, dist_7, dist_8]]
         deltaDomain2 = get_submatrix_add(deltaDomain2, (int_x, int_y), convolution)
 
-    return deltaDomain2
+    return np.array(deltaDomain2) * D
 
 def create_remove_imgs():
     path_to_diffuse_pngs = 'diffusePngs/'
@@ -303,7 +324,7 @@ if __name__ == "__main__":
     print('Creating Vas')
     # vas_structure = VascularGenerator(max_range=100, num_of_nodes=2)
     # vas_structure = VasGen2(max_range=100, num_of_nodes=10)
-    vas_structure = VasGen2(max_range=20, num_of_nodes=4, side_nodes=False)
+    vas_structure = VasGen2(max_range=20, num_of_nodes=2, side_nodes=False)
     print('CreatED Vas')
     vas_structure.print_images(graph_name='AutoGrad_startGraph.png', img_name='AutoGrad_startImg.png')
 
@@ -394,7 +415,7 @@ if __name__ == "__main__":
         ax_diffused_img.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
         ax_diffused_img.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
         # print(np.array(vas_structure.diffused_img))
-        diffusedplot = ax_diffused_img.imshow(np.rot90(diffused_img_plt1[1:,1:]), vmin=0, vmax=1)
+        diffusedplot = ax_diffused_img.imshow(np.rot90(diffused_img_plt1[1:,1:]) )
         # diffusedcolorbar = fig.colorbar(mappable=diffusedplot, ax=ax_diffused_img, orientation='horizontal')
 
         # ax_diffused_img.imshow(np.rot90(np.array(vas_structure.diffused_img)._value))
@@ -407,7 +428,7 @@ if __name__ == "__main__":
         ax_loss_map.set_title('Diffusion Loss Map')
         ax_loss_map.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
         ax_loss_map.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
-        loss_plot = ax_loss_map.imshow(np.rot90(np.array(loss_map)), vmin=0, vmax=1)
+        loss_plot = ax_loss_map.imshow(np.rot90(np.array(loss_map)))
         # losscolorbar = fig.colorbar(mappable=loss_plot, ax=ax_loss_map, orientation='horizontal')
         # losscolorbar.set_clim(np.rot90(np.array(loss_map)).min(), np.rot90(np.array(loss_map).max()))
 
@@ -424,7 +445,7 @@ if __name__ == "__main__":
     pts = np.array(vas_structure.pts)
     print('Starting AutoGrad\n')
     print('Original MvPts: ', vas_structure.moveable_pts)
-    optimized_mvble_pts = AdamTwo(grad(fitness), vas_structure.moveable_pts, vas_structure=vas_structure, step_size=.5, num_iters=total_iterations, callback=callback)
+    optimized_mvble_pts = AdamTwo(grad(fitness), vas_structure.moveable_pts, vas_structure=vas_structure, step_size=0.3, num_iters=total_iterations, callback=callback)
     # optimized_mvble_pts = AdamTwo(grad(fitness), vas_structure.moveable_pts, vas_structure=vas_structure, step_size=0.005, num_iters=total_iterations, callback=callback)
     # optimized_mvble_pts = AdamTwo(grad(fitness), vas_structure.moveable_pts, vas_structure=vas_structure, step_size=0.01, num_iters=total_iterations, callback=callback)
     print('Finished AutoGrad\n')

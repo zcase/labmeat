@@ -121,6 +121,7 @@ class VasGen2:
             for lst_pt in lst_pt_list:
                 # edges.append((np.asarray(tuple_pt), list(np_pt)))
                 edges.append((list(tuple_pt), lst_pt))
+        
 
         return edges
 
@@ -159,6 +160,7 @@ class VasGen2:
             # print(pt1)
             # print(pt2)
             pts_on_line = list(bresenham(pt1[0], pt1[1], pt2[0], pt2[1]))
+            print(pts_on_line)
             for x, y in pts_on_line:
                 if (x == pt1[0] and y == pt1[1]) or (x == pt2[0] and y == pt2[1]):
                     img[x][y] = 2

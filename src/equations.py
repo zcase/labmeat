@@ -33,7 +33,7 @@ from autograd.builtins import isinstance, tuple
 
 def computeFlow(vas_structure):
     # print('In computeFlow')
-    RADIUS = 1          # ? Not sure what we will want this to be
+    RADIUS = 1.0          # ? Not sure what we will want this to be
     VISCOSITY = 0.00089 # Viscosity of water at 25C
 
     numNodes = len(vas_structure.pts)
@@ -121,6 +121,7 @@ def computeFlow(vas_structure):
     # All values in matrix 'B' are zero, except for first row for pressure at first node ('initial' section)
     answerMatrix = [0]*matrixSize
     answerMatrix[0] = 1000
+    # answerMatrix[0] = 1
     
     # answerMatrix[0] = 1
 
