@@ -311,3 +311,47 @@ class VasGen2:
         # https://stackoverflow.com/questions/38191855/zero-pad-numpy-array
         img = np.pad(np.array(self.img), ((2, 3), (2, 3)), 'constant')
         plt.imsave(img_name, np.rot90(img), cmap='jet')
+
+    def update_hillclimb_pts(self, new_mvable_pts):
+        self.graph = dict()
+        pts_lst = []
+        prev = None
+        cur = None
+
+        for i in range(0, len(list(new_mvable_pts))):
+           
+            cur  = list(new_mvable_pts)[i]
+            print('updating points', cur)
+            x = float(cur[0])
+            y = float(cur[1])
+            if x < self.min_range+1:
+                x = float(self.min_range+1)
+            elif x > self.max_range-1:
+                x = float(self.max_range-1)
+            
+            if y < self.min_range+1:
+                y = float(self.min_range+1)
+            elif y > self.max_range-1:
+                y = float(self.max_range-1)
+
+            cur = [x, y]
+            pts_lst = pts_lst + [cur]
+
+        self.moveable_pts = pts_lst
+        self.remove_dup_pts()
+
+        pts = []
+        if self.has_side_nodes:
+            pts = self.moveable_pts + self.left_wall + self.right_wall + self.left_wall_startend + self.right_wall_startend
+        else:
+            pts = self.moveable_pts + self.left_wall_startend + self.right_wall_startend
+        
+        self.pts = sorted(pts, key=lambda x: (-x[0],x[1]), reverse=True)
+
+        self.tri = Delaunay(self.pts)
+        self.edges = self.generate_edges(self.tri, self.pts)
+
+        self.img = None
+        self.img = self.convert_to_img(self.edges, self.max_range)
+
+        self.update_count = self.update_count + 1
