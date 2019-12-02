@@ -37,6 +37,8 @@ class VasGen2:
         self.img = self.convert_to_img(self.edges, max_range)
         self.diffused_img = None
 
+        self.pts_on_vessels = []
+
     # ====================== #
     # ==== Create Walls ==== #
     # ====================== #
@@ -175,6 +177,7 @@ class VasGen2:
     def add_flows_to_img(self, flow_dict):
         # print('In add_flows_to_img')
         img = []
+        self.pts_on_vessels = []
         for _ in range(int(self.max_range + 1)):
             img.append([0.0 for i in range(int(self.max_range + 1))])
 
@@ -183,6 +186,7 @@ class VasGen2:
             pt1 = [int(i) for i in list(pt1)]
             pt2 = [int(i) for i in list(pt2)]
             pts_on_line = list(bresenham(pt1[0], pt1[1], pt2[0], pt2[1]))
+            self.pts_on_vessels += pts_on_line
             for x, y in pts_on_line:
                 img[x][y] = flow_val
 
