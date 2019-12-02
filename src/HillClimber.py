@@ -217,7 +217,7 @@ def loss_health(img, iter, vessel_points):
     # sum of sigmoid values (high N is low low, low N is high loss)
     total_loss = 0.0
     for ix,iy in np.ndindex(img.shape):
-        if not (ix, iy) in vessel_points:
+        if vessel_points[(ix,iy)] > 0.0:
             val = img[ix,iy]
             loss = 1
             if val >= threshold:
