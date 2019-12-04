@@ -1,5 +1,7 @@
 from autograd.builtins import isinstance, tuple, list
 import autograd.numpy as np
+# import jax.numpy as np
+# from jax.builtins import isinstance, tuple, list
 from collections import defaultdict 
 import matplotlib.pyplot as plt
 from scipy.spatial import Delaunay
@@ -166,7 +168,7 @@ class VasGen2:
             # print(pt1)
             # print(pt2)
             pts_on_line = list(bresenham(pt1[0], pt1[1], pt2[0], pt2[1]))
-            print(pts_on_line)
+            # print(pts_on_line)
             for x, y in pts_on_line:
                 if (x == pt1[0] and y == pt1[1]) or (x == pt2[0] and y == pt2[1]):
                     img[x][y] = 2
@@ -329,7 +331,7 @@ class VasGen2:
         for i in range(0, len(list(new_mvable_pts))):
            
             cur  = list(new_mvable_pts)[i]
-            print('updating points', cur)
+            # print('updating points', cur)
             x = float(cur[0])
             y = float(cur[1])
             if x < self.min_range+1:

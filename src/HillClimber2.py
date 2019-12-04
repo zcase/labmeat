@@ -61,171 +61,171 @@ def create_remove_imgs():
         for img_file in os.listdir(sim_fig_folder):
             os.remove(sim_fig_folder + img_file)
 
-def get_submatrix_add(lst_matrix, center_pt_tuple, convolution, submatrix_size=2):
-    w, h = len(lst_matrix), len(lst_matrix[0])
-    orig_row, orig_col = center_pt_tuple
-    row, col = orig_row, orig_col
-    row_start = -1
-    row_end = -1
-    col_start = -1
-    col_end = -1
+# def get_submatrix_add(lst_matrix, center_pt_tuple, convolution, submatrix_size=2):
+#     w, h = len(lst_matrix), len(lst_matrix[0])
+#     orig_row, orig_col = center_pt_tuple
+#     row, col = orig_row, orig_col
+#     row_start = -1
+#     row_end = -1
+#     col_start = -1
+#     col_end = -1
 
-    if row >= 0 and row < h:
-        row_start = row - submatrix_size + 1 if (row - submatrix_size + 1) > 0 else 0
-        row_end = row + submatrix_size if (row + submatrix_size) <= h else h
-    elif row == h:
-        row -= 1
-        row_start = row - submatrix_size + 1 if (row - submatrix_size + 1) > 0 else 0
-        row_end = row + submatrix_size if (row + submatrix_size) <= h else h
-    elif row < 0 or row > h:
-        print('Bad row dimension of ', row)
+#     if row >= 0 and row < h:
+#         row_start = row - submatrix_size + 1 if (row - submatrix_size + 1) > 0 else 0
+#         row_end = row + submatrix_size if (row + submatrix_size) <= h else h
+#     elif row == h:
+#         row -= 1
+#         row_start = row - submatrix_size + 1 if (row - submatrix_size + 1) > 0 else 0
+#         row_end = row + submatrix_size if (row + submatrix_size) <= h else h
+#     elif row < 0 or row > h:
+#         print('Bad row dimension of ', row)
 
-    if col >= 0 and col < w:
-        col_start = col - submatrix_size + 1 if (col - submatrix_size + 1) > 0 else 0
-        col_end = col + submatrix_size if (col + submatrix_size) <= w else w
-    elif col == w:
-        col -= 1
-        col_start = col - submatrix_size + 1 if (col - submatrix_size + 1) > 0 else 0
-        col_end = col + submatrix_size if (col + submatrix_size) <= w else w
-    elif col < 0 or col > w:
-        print('Bad col dimension of ', col)
+#     if col >= 0 and col < w:
+#         col_start = col - submatrix_size + 1 if (col - submatrix_size + 1) > 0 else 0
+#         col_end = col + submatrix_size if (col + submatrix_size) <= w else w
+#     elif col == w:
+#         col -= 1
+#         col_start = col - submatrix_size + 1 if (col - submatrix_size + 1) > 0 else 0
+#         col_end = col + submatrix_size if (col + submatrix_size) <= w else w
+#     elif col < 0 or col > w:
+#         print('Bad col dimension of ', col)
 
-    conv_row_start = 0
-    conv_row_end = 3
-    conv_col_start = 0
-    conv_col_end = 3
-    new_convolution = None
+#     conv_row_start = 0
+#     conv_row_end = 3
+#     conv_col_start = 0
+#     conv_col_end = 3
+#     new_convolution = None
 
-    if (orig_row - submatrix_size + 1) < 0:
-        conv_row_start = 1
-    if (orig_row + submatrix_size ) >= h:
-        conv_row_end = 1
+#     if (orig_row - submatrix_size + 1) < 0:
+#         conv_row_start = 1
+#     if (orig_row + submatrix_size ) >= h:
+#         conv_row_end = 1
 
-    if (orig_col - submatrix_size + 1) < 0:
-        conv_col_start = 1
-    if (orig_col + submatrix_size) >= w:
-        conv_col_end = 1
+#     if (orig_col - submatrix_size + 1) < 0:
+#         conv_col_start = 1
+#     if (orig_col + submatrix_size) >= w:
+#         conv_col_end = 1
 
-    new_convolution = convolution[conv_row_start:conv_row_end][conv_col_start:conv_col_end]
+#     new_convolution = convolution[conv_row_start:conv_row_end][conv_col_start:conv_col_end]
 
-    new_matrix = []
-    for row_idx, lst_row in enumerate(lst_matrix):
-        count = 0
-        if row_idx >= row_start and row_idx < row_end and count < conv_col_end:
-            val2 = new_convolution[conv_col_start + count]
-            updated_lst_vals = [sum(x) for x in zip(lst_row[col_start:col_end], val2)]
+#     new_matrix = []
+#     for row_idx, lst_row in enumerate(lst_matrix):
+#         count = 0
+#         if row_idx >= row_start and row_idx < row_end and count < conv_col_end:
+#             val2 = new_convolution[conv_col_start + count]
+#             updated_lst_vals = [sum(x) for x in zip(lst_row[col_start:col_end], val2)]
 
-            new_row=[]
-            row_count = 0
-            for cur_col_idx, val in enumerate(lst_row):
-                if cur_col_idx >= col_start and cur_col_idx < col_end:
-                    new_row.append(updated_lst_vals[0+row_count])
-                    row_count = row_count + 1
-                else:
-                    new_row.append(val)
+#             new_row=[]
+#             row_count = 0
+#             for cur_col_idx, val in enumerate(lst_row):
+#                 if cur_col_idx >= col_start and cur_col_idx < col_end:
+#                     new_row.append(updated_lst_vals[0+row_count])
+#                     row_count = row_count + 1
+#                 else:
+#                     new_row.append(val)
 
-            count = count + 1
-            lst_row = new_row
+#             count = count + 1
+#             lst_row = new_row
 
-        new_matrix.append(lst_row)
-    return new_matrix
+#         new_matrix.append(lst_row)
+#     return new_matrix
 
 
-def diffusion(mvble_pts, img):
-    # D is the defusion constant
-    # D = .225
-    # B = D / 10
-    D = 0.03
-    B = D / 4
-    # D = 0.00000001
-    # B = D / 4
+# def diffusion(mvble_pts, img):
+#     # D is the defusion constant
+#     # D = .225
+#     # B = D / 10
+#     D = 0.03
+#     B = D / 4
+#     # D = 0.00000001
+#     # B = D / 4
 
-    #https://programtalk.com/python-examples/autograd.scipy.signal.convolve/
-    for _ in range(0, 60): # how many times you run a diffusion update
-        convolve = np.array([[1*D, 1*D, 1*D],[1*D,-8*D,1*D], [1*D, 1*D, 1*D]])
-        deltaDiffusion = sig.convolve(np.array(img), convolve)[1:-1, 1:-1] #take off first and last
-        # deltaDiffusion = deltaDiffusion + np.array(img)
+#     #https://programtalk.com/python-examples/autograd.scipy.signal.convolve/
+#     for _ in range(0, 60): # how many times you run a diffusion update
+#         convolve = np.array([[1*D, 1*D, 1*D],[1*D,-8*D,1*D], [1*D, 1*D, 1*D]])
+#         deltaDiffusion = sig.convolve(np.array(img), convolve)[1:-1, 1:-1] #take off first and last
+#         # deltaDiffusion = deltaDiffusion + np.array(img)
 
-        # the update to the img from one step of diffusion
-        img = np.array(np.array(img) + np.array(deltaDiffusion) + np.array(nonlinearDiffusion(mvble_pts, img)))
-        img = img - (B * img)
+#         # the update to the img from one step of diffusion
+#         img = np.array(np.array(img) + np.array(deltaDiffusion) + np.array(nonlinearDiffusion(mvble_pts, img)))
+#         img = img - (B * img)
    
-    np_img = np.array(img)
-    mn, mx = np_img.min(), np_img.max()
-    np_img = (np_img - mn) / (mx - mn)
-    return np_img
+#     np_img = np.array(img)
+#     mn, mx = np_img.min(), np_img.max()
+#     np_img = (np_img - mn) / (mx - mn)
+#     return np_img
 
-# None linear diffusion (compute each convoution for each location)
-def nonlinearDiffusion(mvble_pts, img):
-    #http://greg-ashton.physics.monash.edu/applying-python-functions-in-moving-windows.html
-    #https://stackoverflow.com/questions/12816293/vectorize-this-convolution-type-loop-more-efficiently-in-numpy
-    h, w = np.array(img).shape
-    deltaDomain2 = []
-    for _ in range(w):
-        deltaDomain2.append([0.0 for _ in range(h)])
+# # None linear diffusion (compute each convoution for each location)
+# def nonlinearDiffusion(mvble_pts, img):
+#     #http://greg-ashton.physics.monash.edu/applying-python-functions-in-moving-windows.html
+#     #https://stackoverflow.com/questions/12816293/vectorize-this-convolution-type-loop-more-efficiently-in-numpy
+#     h, w = np.array(img).shape
+#     deltaDomain2 = []
+#     for _ in range(w):
+#         deltaDomain2.append([0.0 for _ in range(h)])
 
-    for i in range(len(mvble_pts)):
-        pt = mvble_pts[i]
-        x = pt[0]
-        y = pt[1]
-        int_x = 0
-        int_y = 0
+#     for i in range(len(mvble_pts)):
+#         pt = mvble_pts[i]
+#         x = pt[0]
+#         y = pt[1]
+#         int_x = 0
+#         int_y = 0
 
 
-        if type(x) != type(np.array((1,1))) and type(x) != type(1):
-            int_x = int(np.array(mvble_pts[i][0])) 
-            int_y = int(np.array(mvble_pts[i][1]))
-        else:
-            int_x = int(np.array(mvble_pts[i][0]))
-            int_y = int(np.array(mvble_pts[i][1]))
+#         if type(x) != type(np.array((1,1))) and type(x) != type(1):
+#             int_x = int(np.array(mvble_pts[i][0])) 
+#             int_y = int(np.array(mvble_pts[i][1]))
+#         else:
+#             int_x = int(np.array(mvble_pts[i][0]))
+#             int_y = int(np.array(mvble_pts[i][1]))
         
-        np_pt = np.array([x, y])
+#         np_pt = np.array([x, y])
 
-        inc = 0.5
-        dist_0 = np.linalg.norm(np_pt - np.array([int_x-1 + inc, int_y-1 + inc]))
-        dist_1 = np.linalg.norm(np_pt - np.array([int_x + inc, int_y-1 + inc]))
-        dist_2 = np.linalg.norm(np_pt - np.array([int_x+1 + inc, int_y-1 + inc]))
+#         inc = 0.5
+#         dist_0 = np.linalg.norm(np_pt - np.array([int_x-1 + inc, int_y-1 + inc]))
+#         dist_1 = np.linalg.norm(np_pt - np.array([int_x + inc, int_y-1 + inc]))
+#         dist_2 = np.linalg.norm(np_pt - np.array([int_x+1 + inc, int_y-1 + inc]))
 
-        dist_3 = np.linalg.norm(np_pt - np.array([int_x-1 + inc, int_y + inc]))
-        dist_4 = np.linalg.norm(np_pt - np.array([int_x + inc, int_y + inc]))
-        dist_5 = np.linalg.norm(np_pt - np.array([int_x+1 + inc, int_y + inc]))
+#         dist_3 = np.linalg.norm(np_pt - np.array([int_x-1 + inc, int_y + inc]))
+#         dist_4 = np.linalg.norm(np_pt - np.array([int_x + inc, int_y + inc]))
+#         dist_5 = np.linalg.norm(np_pt - np.array([int_x+1 + inc, int_y + inc]))
 
-        dist_6 = np.linalg.norm(np_pt - np.array([int_x-1 + inc, int_y+1 + inc]))
-        dist_7 = np.linalg.norm(np_pt - np.array([int_x + inc, int_y+1 + inc]))
-        dist_8 = np.linalg.norm(np_pt - np.array([int_x+1 + inc, int_y+1 + inc]))
+#         dist_6 = np.linalg.norm(np_pt - np.array([int_x-1 + inc, int_y+1 + inc]))
+#         dist_7 = np.linalg.norm(np_pt - np.array([int_x + inc, int_y+1 + inc]))
+#         dist_8 = np.linalg.norm(np_pt - np.array([int_x+1 + inc, int_y+1 + inc]))
 
-        X = -dist_0 - dist_1 - dist_2 - dist_3 - dist_5 - dist_6 - dist_7 - dist_8
+#         X = -dist_0 - dist_1 - dist_2 - dist_3 - dist_5 - dist_6 - dist_7 - dist_8
         
-        convolution = [[sigmoid(dist_0 - 1), sigmoid(dist_1 - 1), sigmoid(dist_2 - 1)], [sigmoid(dist_3 - 1), X, sigmoid(dist_5 - 1)], [sigmoid(dist_6 - 1), sigmoid(dist_7 - 1), sigmoid(dist_8 - 1)]]
+#         convolution = [[sigmoid(dist_0 - 1), sigmoid(dist_1 - 1), sigmoid(dist_2 - 1)], [sigmoid(dist_3 - 1), X, sigmoid(dist_5 - 1)], [sigmoid(dist_6 - 1), sigmoid(dist_7 - 1), sigmoid(dist_8 - 1)]]
         
-        deltaDomain2 = get_submatrix_add(deltaDomain2, (int_x, int_y), convolution)
+#         deltaDomain2 = get_submatrix_add(deltaDomain2, (int_x, int_y), convolution)
 
-    return deltaDomain2
+#     return deltaDomain2
 
-def create_loss_map(img, iter):
-    h, w = np.array(img).shape
-    loss_map = []
-    for _ in range(w):
-        loss_map.append([0.0 for _ in range(h)])
+# def create_loss_map(img, iter):
+#     h, w = np.array(img).shape
+#     loss_map = []
+#     for _ in range(w):
+#         loss_map.append([0.0 for _ in range(h)])
 
-    ideal = np.ones(img.shape)[1:,1:]
-    val = np.abs(ideal - img[1:,1:])
-    return val
+#     ideal = np.ones(img.shape)[1:,1:]
+#     val = np.abs(ideal - img[1:,1:])
+#     return val
 
-def loss_health(img, iter, vessel_points):
-    threshold = 0.9
-    # 2D array of neutrient values
-    # sum of sigmoid values (high N is low low, low N is high loss)
-    total_loss = 0.0
-    for ix,iy in np.ndindex(img.shape):
-        if vessel_points[(ix,iy)] > 0.0:
-            val = img[ix,iy]
-            loss = 1
-            if val >= threshold:
-                loss = 1/(1+img[ix,iy])
-            total_loss += loss
+# def loss_health(img, iter, vessel_points):
+#     threshold = 0.9
+#     # 2D array of neutrient values
+#     # sum of sigmoid values (high N is low low, low N is high loss)
+#     total_loss = 0.0
+#     for ix,iy in np.ndindex(img.shape):
+#         if vessel_points[(ix,iy)] > 0.0:
+#             val = img[ix,iy]
+#             loss = 1
+#             if val >= threshold:
+#                 loss = 1/(1+img[ix,iy])
+#             total_loss += loss
     
-    return total_loss
+#     return total_loss
 
 def adjustMoveRate(num):
     num = num/2
@@ -253,9 +253,9 @@ if __name__ == "__main__":
 
     test_movement = np.array([-5, -2, -1, 0, 1, 2, 5])
 
-    def fitness(fit_mvable_pts, iter):
-        diffused_img = diffusion(fit_mvable_pts, img)
-        return loss_health(diffused_img, iter, vas_structure.pts_on_vessels)
+    # def fitness(fit_mvable_pts, iter):
+    #     diffused_img = diffusion(fit_mvable_pts, img)
+    #     return loss_health(diffused_img, iter, vas_structure.pts_on_vessels)
 
     flowDict = computeFlow(vas_structure)
     vas_structure.add_flows_to_img(flowDict)
@@ -382,7 +382,7 @@ if __name__ == "__main__":
 
         (max_t, count) = getSampleParameters()
         loss = np.cumsum(fitnessList[int(count*.30):-1])[-1]#fitness(mvable_pts, i)
-        print(loss)
+        # print(loss)
         if loss > currentLoss:
             currentLoss = loss
             dImproved = True

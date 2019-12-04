@@ -180,6 +180,8 @@ def nonLinearAdjustment(movablePts):
                 newAdj.append(thisAdj[xI]) #no change
         #accumulate this movable point into the total adjustment 
         allAdjustment = allAdjustment + np.array(newAdj)
+        # print(np.array(allAdjustment))
+        # print('\n\n')
     return allAdjustment
         
 def distToConc(distance):
@@ -506,8 +508,9 @@ if __name__ == '__main__':
     for iteration in range(0, MaxIterations):
         grad_pts = gradFitness(movablePts, iteration)
         print(grad_pts)
-        # movablePts = tuple(np.array(movablePts) + np.array(grad_pts) * StepSize)
+        movablePts = tuple(np.array(movablePts) + np.array(grad_pts) * StepSize)
 
+        # movablePts = np.array(movablePts) + np.array(grad_pts)
 #        # initial conditions are at the beginning of the dynamics just calcluated
         initialConditions = getInitialValues()
 #         # make a random mutation
