@@ -37,6 +37,10 @@ class VasGen2:
         self.img = self.convert_to_img(self.edges, max_range)
         self.diffused_img = None
 
+        self.Q = None
+        self.product_values = None
+        self.nutrient_values = None
+
         self.pts_on_vessels = defaultdict(lambda: 0.0)
 
     # ====================== #
