@@ -7,6 +7,7 @@ import math
 import matplotlib.pyplot as plt
 
 import random
+import time
 
 import imageio
 from natsort import natsorted, ns
@@ -345,6 +346,7 @@ if __name__ == "__main__":
     currentLoss = -1
 
     for i in range(20):
+        start = time.time()
 
         if not dImproved:
             index = random.randrange(0, numNodes)
@@ -389,18 +391,22 @@ if __name__ == "__main__":
         if loss > currentLoss:
             currentLoss = loss
             dImproved = True
-            all_loss.append(loss)
-            callback(mvable_pts, i, currentLoss)
-            time_lst.append(i)
             print(i, 'REDUCED LOSS:', loss)
-            vas_structure.update_hillclimb_pts(mvable_pts)
-            vas_structure.print_images(graph_name=sim_graph_folder+'test_graph'+str(i)+'.png', img_name=sim_img_folder+'test_img'+str(i)+'.png')
         else:
             vas_structure.moveable_pts[index] = originalPoints
             mvable_pts = vas_structure.moveable_pts
-            vas_structure.update_hillclimb_pts(mvable_pts)
+            # vas_structure.update_hillclimb_pts(mvable_pts)
             dImproved = False
             print(i, 'LOSS IS >= CURRENT', loss)
+
+        end = time.time()
+        elapsedTime = end-start
+        # all_loss.append(currentLoss)
+        # vas_structure.update_hillclimb_pts(mvable_pts)
+        callback(mvable_pts, i, currentLoss, elapsedTime)
+        # time_lst.append(i)
+        
+        vas_structure.print_images(graph_name=sim_graph_folder+'test_graph'+str(i)+'.png', img_name=sim_img_folder+'test_img'+str(i)+'.png')
 
 
 
