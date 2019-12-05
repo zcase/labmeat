@@ -119,9 +119,9 @@ if __name__ == "__main__":
         # ==== LOSS as a function of TIME ==== #
         # ==================================== #
         ax_loss.cla()
-        ax_loss.set_title('Train Loss')
-        ax_loss.set_xlabel('t')
-        ax_loss.set_ylabel('loss')
+        ax_loss.set_title('Optimization Gain')
+        ax_loss.set_xlabel('Iteration')
+        ax_loss.set_ylabel('Fitness')
         nowLoss = nowLoss
         all_loss.append(nowLoss)
         time = np.arange(0, len(all_loss), 1)
