@@ -114,7 +114,6 @@ if __name__ == "__main__":
     ax_img          = fig.add_subplot(234, frameon=True)
     ax_product      = fig.add_subplot(235, frameon=True)
     ax_nutrient     = fig.add_subplot(236, frameon=True)
-    plt.tight_layout()
     plt.show(block=False)
 
     def callback(mvable_pts, iter, nowLoss, time_duration):
@@ -137,7 +136,7 @@ if __name__ == "__main__":
         ax_cpu.set_xlabel('CPU TIME')
         ax_cpu.set_ylabel('Fitness')
         time_lst.append(time_duration)
-        ax_cpu.scatter(time_lst, all_loss, '-', linestyle = 'solid')
+        ax_cpu.scatter(time_lst, all_loss)
         ax_cpu.legend(loc = "upper left")
 
         # ==== Plots the Node Graph ==== #
@@ -170,6 +169,7 @@ if __name__ == "__main__":
         ax_nutrient.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
         ax_nutrient.imshow(np.rot90(np.array(vas_structure.nutrient_values)))
 
+        plt.tight_layout()
         plt.draw()
         saveImageOne(iter)
         plt.pause(0.001)
