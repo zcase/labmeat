@@ -238,7 +238,7 @@ def adjustMoveRate(num):
     return num
 
 def saveImageOne(iteration):
-    fig.savefig('HillClimb/figs/' + str(iteration) + '.png', size=[1600,400])#, size=[1000,1000]) #, size=[700,700] IF 1000, renders each quadrant separately
+    fig.savefig('HillClimb/figs/' + str(iteration) + '.png', bbox_inches='tight')#, size=[1000,1000]) #, size=[700,700] IF 1000, renders each quadrant separately
 
 if __name__ == "__main__":
     print("Climbing the hill")
@@ -304,7 +304,7 @@ if __name__ == "__main__":
         ax_cpu.set_xlabel('CPU TIME')
         ax_cpu.set_ylabel('Fitness')
         time_lst.append(time_duration)
-        ax_cpu.plot(time_lst, all_loss, '-', linestyle = 'solid')
+        ax_cpu.scatter(time_lst, all_loss)
         ax_cpu.legend(loc = "upper left")
 
         # ==== Plots the Node Graph ==== #
@@ -337,6 +337,7 @@ if __name__ == "__main__":
         ax_nutrient.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
         ax_nutrient.imshow(np.rot90(np.array(vas_structure.nutrient_values)))
 
+        plt.tight_layout()
         plt.draw()
         saveImageOne(iter)
         plt.pause(0.001)
