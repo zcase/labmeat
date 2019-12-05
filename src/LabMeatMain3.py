@@ -83,8 +83,8 @@ if __name__ == "__main__":
     vas_structure.add_flows_to_img(flowDict)
     img = np.array(vas_structure.img)
     vas_structure.Q = img
-    vas_structure.product_values = np.array(np.zeros(img.shape))
-    vas_structure.nutrient_values = np.array(np.zeros(img.shape))
+    # vas_structure.product_values = np.array(np.zeros(img.shape))
+    # vas_structure.nutrient_values = np.array(np.zeros(img.shape))
 
     mvable_pts = vas_structure.moveable_pts
 
@@ -107,28 +107,37 @@ if __name__ == "__main__":
         return loss
 
     # Set up figures
-    fig = plt.figure(figsize=(16, 4), facecolor='white')
-    ax_loss         = fig.add_subplot(151, frameon=True)
-    ax_node_graph   = fig.add_subplot(152, frameon=True)
-    ax_img          = fig.add_subplot(153, frameon=True)
-    ax_diffused_img = fig.add_subplot(154, frameon=True)
-    ax_loss_map     = fig.add_subplot(155, frameon=True)
+    fig = plt.figure(figsize=(16, 5), facecolor='white')
+    ax_loss         = fig.add_subplot(231, frameon=True)
+    ax_cpu          = fig.add_subplot(232, frameon=True)
+    ax_node_graph   = fig.add_subplot(233, frameon=True)
+    ax_img          = fig.add_subplot(234, frameon=True)
+    ax_product      = fig.add_subplot(235, frameon=True)
+    ax_nutrient     = fig.add_subplot(236, frameon=True)
+    plt.show(block=False)
 
-    def callback(mvable_pts, iter, nowLoss):
-        # ==================================== #
+    def callback(mvable_pts, iter, nowLoss, time_duration):
         # ==== LOSS as a function of TIME ==== #
-        # ==================================== #
         ax_loss.cla()
         ax_loss.set_title('Optimization Gain')
         ax_loss.set_xlabel('Iteration')
         ax_loss.set_ylabel('Fitness')
         nowLoss = nowLoss
         all_loss.append(nowLoss)
-        time = np.arange(0, len(all_loss), 1)
-        
-        ax_loss.plot(time, all_loss, '-', linestyle = 'solid', label='loss') #, color = colors[i]
-        ax_loss.set_xlim(time.min(), time.max())
+        iteration = np.arange(0, len(all_loss), 1)
+
+        ax_loss.plot(iteration, all_loss, '-', linestyle = 'solid', label='loss') #, color = colors[i]
+        ax_loss.set_xlim(iteration.min(), iteration.max())
         ax_loss.legend(loc = "upper left")
+
+        # ==== CPU Time ==== #
+        ax_cpu.cla()
+        ax_cpu.set_title('Fitness vs CPU Time')
+        ax_cpu.set_xlabel('CPU TIME')
+        ax_cpu.set_ylabel('Fitness')
+        time_lst.append(time_duration)
+        ax_cpu.plot(time_lst, all_loss, '-', linestyle = 'solid')
+        ax_cpu.legend(loc = "upper left")
 
         # ==== Plots the Node Graph ==== #
         ax_node_graph.cla()
@@ -139,28 +148,26 @@ if __name__ == "__main__":
         ax_node_graph.triplot(np.array(vas_structure.pts)[:,0], np.array(vas_structure.pts)[:,1], vas_structure.tri.simplices)
         ax_node_graph.plot(np.array(vas_structure.pts)[:,0], np.array(vas_structure.pts)[:,1], 'o')
 
-        # ==== Plot Img Version ==== #
+        # ==== Plot Flow Img ==== #
         ax_img.cla()
         ax_img.set_title('Flow Image')
         ax_img.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
         ax_img.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
-        imgplot = ax_img.imshow(np.rot90(np.array(vas_structure.img)[1:,1:]))
+        ax_img.imshow(np.rot90(np.array(vas_structure.img)[1:,1:]))
 
-        # ==== Plot Diffused Img Version ==== #
-        # ax_diffused_img.cla()
-        # diffused_img_plt1 = diffusion(mvable_pts, vas_structure.img)
-        # ax_diffused_img.set_title('Diffused Image')
-        # ax_diffused_img.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
-        # ax_diffused_img.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
-        # diffusedplot = ax_diffused_img.imshow(np.rot90(diffused_img_plt1[1:,1:]), vmin=0, vmax=1)
+        # ==== Plot Product Image ==== #
+        ax_product.cla()
+        ax_product.set_title('Product Image')
+        ax_product.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+        ax_product.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
+        ax_product.imshow(np.rot90(np.array(vas_structure.product_values)))
         
-        # # ==== Plot Diffused LOSS MAP ==== #
-        # ax_loss_map.cla()
-        # loss_map = create_loss_map(np.array(diffused_img_plt1), iter)
-        # ax_loss_map.set_title('Diffusion Loss Map')
-        # ax_loss_map.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
-        # ax_loss_map.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
-        # loss_plot = ax_loss_map.imshow(np.rot90(np.array(loss_map)), vmin=0, vmax=1)
+        # # ==== Plot Nutrient Image ==== #
+        ax_nutrient.cla()
+        ax_nutrient.set_title('Nutrient Image')
+        ax_nutrient.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+        ax_nutrient.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
+        ax_nutrient.imshow(np.rot90(np.array(vas_structure.nutrient_values)))
 
         plt.draw()
         saveImageOne(iter)
@@ -178,10 +185,6 @@ if __name__ == "__main__":
     for i in range(200):
         start = time.time()
         grad_pts = gradFitness(mvable_pts, i)
-        end = time.time()
-        elapsedSec = (end - start)
-        elapsedMin = elapsedSec / 60.0
-        print(f'Took {elapsedSec}s ({elapsedMin} min) got Grad Pts:\n', grad_pts)
 
         m = (1 - b1) * np.array(grad_pts)      + b1 * m  # First  moment estimate.
         v = (1 - b2) * (np.array(grad_pts)**2) + b2 * v  # Second moment estimate.
@@ -219,4 +222,7 @@ if __name__ == "__main__":
         flowDict = computeFlow(vas_structure)
         vas_structure.add_flows_to_img(flowDict)
         mvable_pts = vas_structure.moveable_pts
-        callback(mvable_pts, i, newFitness._value)
+
+        end = time.time()
+        elapsedSec = (end - start)
+        callback(mvable_pts, i, newFitness._value, elapsedSec)

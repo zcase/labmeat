@@ -35,13 +35,19 @@ class VasGen2:
         # Create Edges
         self.edges = self.generate_edges(self.tri, self.pts)
 
+        self.nutrient_values = []
+        for _ in range(int(max_range + 1.0)):
+            self.nutrient_values.append([0.0 for i in range(int(max_range + 1.0))])
+
+        self.product_values = []
+        for _ in range(int(max_range + 1.0)):
+            self.product_values.append([0.0 for i in range(int(max_range + 1.0))])
+
         # Convert Edges to image
         self.img = self.convert_to_img(self.edges, max_range)
         self.diffused_img = None
 
         self.Q = None
-        self.product_values = None
-        self.nutrient_values = None
 
         self.pts_on_vessels = defaultdict(lambda: 0.0)
 

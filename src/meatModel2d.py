@@ -373,9 +373,15 @@ def solveModelODEPDE(vas_structure, times, params = (), nonLinear = False, movab
     # print(values[(1,1)])
     for ix,iy,iz in np.ndindex(values.shape):
         if iz == 0: # possibley be 1 for product value
-            vas_structure.nutrient_values[ix,iy] = values[(ix,iy,iz)]
+            try:
+                vas_structure.nutrient_values[ix][iy] = values[(ix,iy,iz)]._value
+            except Exception as e:
+                vas_structure.nutrient_values[ix][iy] = values[(ix,iy,iz)]
         elif iz == 1:
-            vas_structure.product_values[ix,iy] = values[(ix,iy,iz)]
+            try:
+                vas_structure.product_values[ix][iy] = values[(ix,iy,iz)]._value
+            except Exception as e:
+                vas_structure.product_values[ix][iy] = values[(ix,iy,iz)]
     #(dynamicsTrue, fitnessList, odeDeltaList, pdeDeltaList) = getDynamics(
     return (np.array(trajectories), fitnessList, np.array(odeDeltaList), np.array(pdeDeltaList))
     
