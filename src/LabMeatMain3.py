@@ -70,7 +70,7 @@ def saveImageOne(iteration):
 if __name__ == "__main__":
     print("Autograd LabMeat")
     numNodes = 2
-    stepSize = 0.01 # 0.008
+    stepSize = 0.1 # 0.008
     path_to_diffuse_pngs = 'LabMeatMain3/diffusePngs/'
     sim_img_folder = 'LabMeatMain3/imgs/'
     sim_graph_folder = 'LabMeatMain3/graphs/'
@@ -169,6 +169,11 @@ if __name__ == "__main__":
 
     currentLoss = 0
     gradFitness = grad(fitnessValue)
+    m = np.zeros(len(mvable_pts))
+    v = np.zeros(len(mvable_pts))
+    b1=0.9
+    b2=0.999
+    eps=10**-8
     (max_t, count) = getSampleParameters()
     for i in range(200):
         start = time.time()
@@ -178,7 +183,14 @@ if __name__ == "__main__":
         elapsedMin = elapsedSec / 60.0
         print(f'Took {elapsedSec}s ({elapsedMin} min) got Grad Pts:\n', grad_pts)
 
-        mvable_pts = tuple(np.array(mvable_pts) + np.array(grad_pts)* stepSize)
+        m = (1 - b1) * np.array(grad_pts)      + b1 * m  # First  moment estimate.
+        v = (1 - b2) * (np.array(grad_pts)**2) + b2 * v  # Second moment estimate.
+        mhat = m / (1 - b1**(i + 1))    # Bias correction.
+        vhat = v / (1 - b2**(i + 1))
+
+        # mvable_pts = tuple(np.array(mvable_pts) + np.array(grad_pts)* stepSize)
+        mvable_pts = tuple(np.array(mvable_pts) + np.array(grad_pts))
+        mvable_pts = mvable_pts + stepSize * mhat / (np.sqrt(vhat) + eps)
         new_pts = []
         for val in mvable_pts:
             x = float(val[0])

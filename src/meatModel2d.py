@@ -186,7 +186,7 @@ def nonLinearAdjustment(movablePts, shape):
         dist_7 = distToConc(np.linalg.norm(np_pt - np.array([pointX + inc, pointY+1 + inc])))
         dist_8 = distToConc(np.linalg.norm(np_pt - np.array([pointX+1 + inc, pointY+1 + inc])))
 
-        totalAdj = sum([d for d in [dist_0, dist_1, dist_2, dist_3, dist_5, dist_6, dist_7, dist_8]]) * -1
+        totalAdj = np.sum([d for d in [dist_0, dist_1, dist_2, dist_3, dist_5, dist_6, dist_7, dist_8]]) * -1
         convolution = [[dist_0, dist_1, dist_2], 
                        [dist_3, totalAdj, dist_5], 
                        [dist_6, dist_7, dist_8]]
@@ -363,7 +363,7 @@ def solveModelODEPDE(vas_structure, times, params = (), nonLinear = False, movab
             if iz == 0: # possibley be 1 for product value
                 deltaList.append(odeDelta[(ix,iy,iz)])
         # deltaList = odeDelta[vesselCellIds][:,1][0]
-        fitnessList.append(-1*sum(deltaList))
+        fitnessList.append(-1*np.sum(deltaList))
         # remember
         odeDeltaList.append(odeDelta)
         pdeDeltaList.append(pdeDelta)
