@@ -319,20 +319,21 @@ if __name__ == "__main__":
         imgplot = ax_img.imshow(np.rot90(np.array(vas_structure.img)[1:,1:]))
 
         # ==== Plot Diffused Img Version ==== #
-        # ax_diffused_img.cla()
+        ax_diffused_img.cla()
         # diffused_img_plt1 = diffusion(mvable_pts, vas_structure.img)
-        # ax_diffused_img.set_title('Diffused Image')
-        # ax_diffused_img.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
-        # ax_diffused_img.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
+        ax_diffused_img.set_title('Product Image')
+        ax_diffused_img.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+        ax_diffused_img.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
         # diffusedplot = ax_diffused_img.imshow(np.rot90(diffused_img_plt1[1:,1:]), vmin=0, vmax=1)
+        diffusedplot = ax_diffused_img.imshow(np.rot90(vas_structure.product_values))
         
         # # ==== Plot Diffused LOSS MAP ==== #
-        # ax_loss_map.cla()
+        ax_loss_map.cla()
         # loss_map = create_loss_map(np.array(diffused_img_plt1), iter)
-        # ax_loss_map.set_title('Diffusion Loss Map')
-        # ax_loss_map.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
-        # ax_loss_map.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
-        # loss_plot = ax_loss_map.imshow(np.rot90(np.array(loss_map)), vmin=0, vmax=1)
+        ax_loss_map.set_title('Nutrient Image')
+        ax_loss_map.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+        ax_loss_map.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
+        loss_plot = ax_loss_map.imshow(np.rot90(vas_structure.nutrient_values))
 
         plt.draw()
         saveImageOne(iter)

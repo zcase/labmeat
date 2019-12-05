@@ -360,7 +360,7 @@ def solveModelODEPDE(vas_structure, times, params = (), nonLinear = False, movab
         # print(vesselCellIds)
         deltaList = []
         for ix,iy,iz in np.ndindex(odeDelta.shape):
-            if iz == 0: # possibley be 1 for product value
+            if iz == 1: # possibley be 1 for product value
                 deltaList.append(odeDelta[(ix,iy,iz)])
         # deltaList = odeDelta[vesselCellIds][:,1][0]
         fitnessList.append(-1*np.sum(deltaList))
@@ -371,6 +371,11 @@ def solveModelODEPDE(vas_structure, times, params = (), nonLinear = False, movab
         # t_end = time.time()
         # print(f'TIME iter {t}: ', t_end-t_start, 'seconds')
     # print(values[(1,1)])
+    for ix,iy,iz in np.ndindex(values.shape):
+        if iz == 0: # possibley be 1 for product value
+            vas_structure.nutrient_values[ix,iy] = values[(ix,iy,iz)]
+        elif iz == 1:
+            vas_structure.product_values[ix,iy] = values[(ix,iy,iz)]
     #(dynamicsTrue, fitnessList, odeDeltaList, pdeDeltaList) = getDynamics(
     return (np.array(trajectories), fitnessList, np.array(odeDeltaList), np.array(pdeDeltaList))
     
