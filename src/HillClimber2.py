@@ -274,13 +274,14 @@ if __name__ == "__main__":
     time_lst = []
 
     # Set up figures
-    fig = plt.figure(figsize=(16, 5), facecolor='white')
+    fig = plt.figure(figsize=(16, 6), facecolor='white')
     ax_loss         = fig.add_subplot(231, frameon=True)
     ax_cpu          = fig.add_subplot(232, frameon=True)
     ax_node_graph   = fig.add_subplot(233, frameon=True)
     ax_img          = fig.add_subplot(234, frameon=True)
     ax_product      = fig.add_subplot(235, frameon=True)
     ax_nutrient     = fig.add_subplot(236, frameon=True)
+    plt.tight_layout()
     plt.show(block=False)
 
     def callback(mvable_pts, iter, nowLoss, time_duration):

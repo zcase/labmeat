@@ -203,6 +203,7 @@ class VasGen2:
                 self.pts_on_vessels[(x,y)] = flow_val
 
         self.img = img
+        self.Q = np.array(img)
 
         return self.img
 
