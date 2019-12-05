@@ -137,7 +137,7 @@ if __name__ == "__main__":
         ax_cpu.set_xlabel('CPU TIME')
         ax_cpu.set_ylabel('Fitness')
         time_lst.append(time_duration)
-        ax_cpu.plot(time_lst, all_loss, '-', linestyle = 'solid')
+        ax_cpu.scatter(time_lst, all_loss, '-', linestyle = 'solid')
         ax_cpu.legend(loc = "upper left")
 
         # ==== Plots the Node Graph ==== #
