@@ -228,12 +228,12 @@ def create_remove_imgs():
 #     return total_loss
 
 def adjustMoveRate(num):
-    num = num/2
-    if num < 0.2:
+    num = num/1.5
+    if num < 0.5:
         if num > 0:
-            num = 0.2
-        elif num > -0.2:
-            num = -0.2
+            num = 0.5
+        elif num > -0.5:
+            num = -0.5
     return num
 
 def saveImageOne(iteration):
@@ -342,10 +342,9 @@ if __name__ == "__main__":
 
     dImproved = False
     # currentLoss = fitness(mvable_pts, 0)
-    currentLoss = 0
-    temperature = 20
+    currentLoss = -1
 
-    for i in range(200):
+    for i in range(20):
 
         if not dImproved:
             index = random.randrange(0, numNodes)
@@ -371,9 +370,11 @@ if __name__ == "__main__":
             test_y = 19
 
         vas_structure.moveable_pts[index] = [test_x, test_y]
+        mvable_pts = vas_structure.moveable_pts
+        vas_structure.update_hillclimb_pts(mvable_pts)
         flowDict = computeFlow(vas_structure)
         vas_structure.add_flows_to_img(flowDict)
-        mvable_pts = vas_structure.moveable_pts
+        
         
         (dynamicsTrue, fitnessList, odeDeltaList, pdeDeltaList) = getDynamics(vas_structure, 
                         getTrueParameters(), 
@@ -384,6 +385,7 @@ if __name__ == "__main__":
         (max_t, count) = getSampleParameters()
         loss = np.cumsum(fitnessList[int(count*.30):-1])[-1]#fitness(mvable_pts, i)
         # print(loss)
+        print('Point change:', originalPoints, mvable_pts[index])
         if loss > currentLoss:
             currentLoss = loss
             dImproved = True
@@ -394,21 +396,11 @@ if __name__ == "__main__":
             vas_structure.update_hillclimb_pts(mvable_pts)
             vas_structure.print_images(graph_name=sim_graph_folder+'test_graph'+str(i)+'.png', img_name=sim_img_folder+'test_img'+str(i)+'.png')
         else:
-            if temperature - (loss - currentLoss) > 0:
-                temperature = temperature - (loss - currentLoss)
-                currentLoss = loss
-                all_loss.append(loss)
-                callback(mvable_pts, i, currentLoss)
-                time_lst.append(i)
-                dImproved = False
-                print(i, 'TOOK WORSE LOSS, REMAINING TEMP: ', temperature, 'NEW LOSS:', currentLoss)
-                vas_structure.update_hillclimb_pts(mvable_pts)
-                vas_structure.print_images(graph_name=sim_graph_folder+'test_graph'+str(i)+'.png', img_name=sim_img_folder+'test_img'+str(i)+'.png')
-            else:
-                vas_structure.moveable_pts[index] = originalPoints
-                mvable_pts = vas_structure.moveable_pts
-                dImproved = False
-                print(i, 'LOSS IS >= CURRENT')
+            vas_structure.moveable_pts[index] = originalPoints
+            mvable_pts = vas_structure.moveable_pts
+            vas_structure.update_hillclimb_pts(mvable_pts)
+            dImproved = False
+            print(i, 'LOSS IS >= CURRENT', loss)
 
 
 
