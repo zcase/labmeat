@@ -13,7 +13,6 @@ import random
 import time
 
 from natsort import natsorted, ns
-from sklearn.preprocessing import minmax_scale
 from timeit import default_timer as timer
 
 # import jax.numpy as np
@@ -65,7 +64,7 @@ def create_remove_imgs():
             os.remove(sim_fig_folder + img_file)
 
 def saveImageOne(iteration):
-    fig.savefig('LabMeatMain3/figs/' + str(iteration) + '.png', size=[1600,400])#, size=[1000,1000]) #, size=[700,700] IF 1000, renders each quadrant separately
+    fig.savefig('LabMeatMain3/figs/' + str(iteration) + '.png', size=[1600,400])
 
 if __name__ == "__main__":
     print("Autograd LabMeat")
@@ -83,8 +82,6 @@ if __name__ == "__main__":
     vas_structure.add_flows_to_img(flowDict)
     img = np.array(vas_structure.img)
     vas_structure.Q = img
-    # vas_structure.product_values = np.array(np.zeros(img.shape))
-    # vas_structure.nutrient_values = np.array(np.zeros(img.shape))
 
     mvable_pts = vas_structure.moveable_pts
 
@@ -108,6 +105,7 @@ if __name__ == "__main__":
 
     # Set up figures
     fig = plt.figure(figsize=(16, 6), facecolor='white')
+    fig.suptitle('Automatic Differentiation', fontsize=16)
     ax_loss         = fig.add_subplot(231, frameon=True)
     ax_cpu          = fig.add_subplot(232, frameon=True)
     ax_node_graph   = fig.add_subplot(233, frameon=True)
@@ -126,17 +124,17 @@ if __name__ == "__main__":
         all_loss.append(nowLoss)
         iteration = np.arange(0, len(all_loss), 1)
 
-        ax_loss.plot(iteration, all_loss, '-', linestyle = 'solid', label='loss') #, color = colors[i]
+        ax_loss.plot(iteration, all_loss, '-', linestyle = 'solid', label='Gain')
         ax_loss.set_xlim(iteration.min(), iteration.max())
         ax_loss.legend(loc = "upper left")
 
         # ==== CPU Time ==== #
         ax_cpu.cla()
-        ax_cpu.set_title('Fitness vs CPU Time')
-        ax_cpu.set_xlabel('CPU TIME')
-        ax_cpu.set_ylabel('Fitness')
+        ax_cpu.set_title('CPU Time Per Iteration')
+        ax_cpu.set_xlabel('Iteration')
+        ax_cpu.set_ylabel('CPU Time (s)')
         time_lst.append(time_duration)
-        ax_cpu.scatter(time_lst, all_loss)
+        ax_cpu.plot(iteration, time_lst, '-', linestyle = 'solid', label='CPU Time')
         ax_cpu.legend(loc = "upper left")
 
         # ==== Plots the Node Graph ==== #
@@ -175,10 +173,9 @@ if __name__ == "__main__":
         plt.pause(0.001)
         return 3
 
-    currentLoss = 0
     gradFitness = grad(fitnessValue)
-    m = np.zeros(len(mvable_pts))
-    v = np.zeros(len(mvable_pts))
+    m = np.zeros(np.array(mvable_pts).shape)
+    v = np.zeros(np.array(mvable_pts).shape)
     b1=0.9
     b2=0.999
     eps=10**-8
@@ -192,7 +189,6 @@ if __name__ == "__main__":
         mhat = m / (1 - b1**(i + 1))    # Bias correction.
         vhat = v / (1 - b2**(i + 1))
 
-        # mvable_pts = tuple(np.array(mvable_pts) + np.array(grad_pts)* stepSize)
         mvable_pts = tuple(np.array(mvable_pts) + np.array(grad_pts))
         mvable_pts = mvable_pts + stepSize * mhat / (np.sqrt(vhat) + eps)
         new_pts = []
