@@ -242,7 +242,7 @@ def saveImageOne(iteration):
 
 if __name__ == "__main__":
     print("Climbing the hill")
-    numNodes = 2
+    numNodes = 4
     path_to_diffuse_pngs = 'Hillclimb/diffusePngs/'
     sim_img_folder = 'Hillclimb/imgs/'
     sim_graph_folder = 'Hillclimb/graphs/'
@@ -345,8 +345,9 @@ if __name__ == "__main__":
     dImproved = False
     # currentLoss = fitness(mvable_pts, 0)
     currentLoss = -1
-
-    for i in range(20):
+    i = 0
+    timesNotImproved = 0
+    while timesNotImproved < 200:
         start = time.time()
 
         if not dImproved:
@@ -387,27 +388,26 @@ if __name__ == "__main__":
 
         (max_t, count) = getSampleParameters()
         loss = np.cumsum(fitnessList[int(count*.30):-1])[-1]#fitness(mvable_pts, i)
-        # print(loss)
+        
         print('Point change:', originalPoints, mvable_pts[index])
         if loss > currentLoss:
             currentLoss = loss
             dImproved = True
             print(i, 'REDUCED LOSS:', loss)
+            timesNotImproved = 0
         else:
             vas_structure.moveable_pts[index] = originalPoints
             mvable_pts = vas_structure.moveable_pts
-            # vas_structure.update_hillclimb_pts(mvable_pts)
             dImproved = False
             print(i, 'LOSS IS >= CURRENT', loss)
+            timesNotImproved += 1
 
         end = time.time()
         elapsedTime = end-start
-        # all_loss.append(currentLoss)
-        # vas_structure.update_hillclimb_pts(mvable_pts)
         callback(mvable_pts, i, currentLoss, elapsedTime)
-        # time_lst.append(i)
         
         vas_structure.print_images(graph_name=sim_graph_folder+'test_graph'+str(i)+'.png', img_name=sim_img_folder+'test_img'+str(i)+'.png')
+        i += 1
 
 
 
@@ -419,5 +419,5 @@ if __name__ == "__main__":
                     yield imageio.imread(file_path)
 
     sim_fig_folder = 'HillClimb/figs/'
-    imageio.mimsave('HillClimb/HillClimb_Figs.gif', img_path_generator(sim_fig_folder), fps=8)
+    imageio.mimsave('HillClimb/HillClimb_Figs.gif', img_path_generator(sim_fig_folder), fps=10)
 
