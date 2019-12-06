@@ -242,7 +242,7 @@ def saveImageOne(iteration):
 
 if __name__ == "__main__":
     print("Climbing the hill")
-    numNodes = 4
+    numNodes = 2
     path_to_diffuse_pngs = 'Hillclimb/diffusePngs/'
     sim_img_folder = 'Hillclimb/imgs/'
     sim_graph_folder = 'Hillclimb/graphs/'
@@ -265,8 +265,8 @@ if __name__ == "__main__":
     
     img = np.array(img)
     vas_structure.Q = img
-    vas_structure.product_values = np.array(np.zeros(img.shape))
-    vas_structure.nutrient_values = np.array(np.zeros(img.shape))
+    # vas_structure.product_values = np.array(np.zeros(img.shape))
+    # vas_structure.nutrient_values = np.array(np.zeros(img.shape))
 
     mvable_pts = vas_structure.moveable_pts
     
@@ -347,7 +347,7 @@ if __name__ == "__main__":
     currentLoss = -1
     i = 0
     timesNotImproved = 0
-    while timesNotImproved < 200:
+    while timesNotImproved < 50:
         start = time.time()
 
         if not dImproved:
@@ -382,7 +382,7 @@ if __name__ == "__main__":
         
         (dynamicsTrue, fitnessList, odeDeltaList, pdeDeltaList) = getDynamics(vas_structure, 
                         getTrueParameters(), 
-                        nonLinear = False, 
+                        nonLinear = True, 
                         movablePts = vas_structure.moveable_pts,
                         runParameters = getSampleParameters())
 

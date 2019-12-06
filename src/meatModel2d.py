@@ -155,15 +155,23 @@ def nonLinearAdjustment(movablePts, shape):
     # for x in movablePts: #only single numbers in x one D
     for i in range(len(movablePts)):
         pt = movablePts[i]
-        pointX = int(pt[0]._value)
-        pointY = int(pt[1]._value)
+        try:
+            pointX = int(pt[0]._value)
+            pointY = int(pt[1]._value)
+        except AttributeError as e:
+            pointX = int(pt[0])
+            pointY = int(pt[1])
         int_x = 0
         int_y = 0
 
         if type(pt[0]) != type(np.array((1,1))) and type(pt[0]) != type(1) and \
-           (type(movablePts[i][0]) != float and type(movablePts[i][0]) != np.float64):
-            int_x = int(np.array(movablePts[i][0]._value)) 
-            int_y = int(np.array(movablePts[i][1]._value))
+            (type(movablePts[i][0]) != float and type(movablePts[i][0]) != np.float64):
+            try:
+                int_x = int(np.array(movablePts[i][0]._value)) 
+                int_y = int(np.array(movablePts[i][1]._value))
+            except AttributeError as e:
+                int_x = int(np.array(movablePts[i][0])) 
+                int_y = int(np.array(movablePts[i][1]))
         else:
             int_x = int(np.array(movablePts[i][0]))
             int_y = int(np.array(movablePts[i][1]))
@@ -375,12 +383,13 @@ def solveModelODEPDE(vas_structure, times, params = (), nonLinear = False, movab
         if iz == 0: # possibley be 1 for product value
             try:
                 vas_structure.nutrient_values[ix][iy] = values[(ix,iy,iz)]._value
-            except Exception as e:
+            except AttributeError as e:
                 vas_structure.nutrient_values[ix][iy] = values[(ix,iy,iz)]
+                print(values[(ix,iy,iz)])
         elif iz == 1:
             try:
                 vas_structure.product_values[ix][iy] = values[(ix,iy,iz)]._value
-            except Exception as e:
+            except AttributeError as e:
                 vas_structure.product_values[ix][iy] = values[(ix,iy,iz)]
     #(dynamicsTrue, fitnessList, odeDeltaList, pdeDeltaList) = getDynamics(
     return (np.array(trajectories), fitnessList, np.array(odeDeltaList), np.array(pdeDeltaList))
