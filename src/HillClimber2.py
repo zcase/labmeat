@@ -238,7 +238,7 @@ def adjustMoveRate(num):
     return num
 
 def saveImageOne(iteration):
-    fig.savefig('HillClimb/figs/' + str(iteration) + '.png', bbox_inches='tight')#, size=[1000,1000]) #, size=[700,700] IF 1000, renders each quadrant separately
+    fig.savefig('HillClimb/figs/' + str(iteration) + '.png', size=[1600,400])#, size=[1000,1000]) #, size=[700,700] IF 1000, renders each quadrant separately
 
 if __name__ == "__main__":
     print("Climbing the hill")
@@ -281,7 +281,6 @@ if __name__ == "__main__":
     ax_img          = fig.add_subplot(234, frameon=True)
     ax_product      = fig.add_subplot(235, frameon=True)
     ax_nutrient     = fig.add_subplot(236, frameon=True)
-    plt.tight_layout()
     plt.show(block=False)
 
     def callback(mvable_pts, iter, nowLoss, time_duration):
@@ -321,23 +320,23 @@ if __name__ == "__main__":
         ax_img.set_title('Flow Image')
         ax_img.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
         ax_img.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
-        ax_img.imshow(np.rot90(np.array(vas_structure.img)[1:,1:]))
+        ax_img.imshow(np.rot90(np.array(vas_structure.img)[1:,1:]), cmap='jet')
 
         # ==== Plot Product Image ==== #
         ax_product.cla()
         ax_product.set_title('Product Image')
         ax_product.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
         ax_product.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
-        ax_product.imshow(np.rot90(np.array(vas_structure.product_values)))
+        ax_product.imshow(np.rot90(np.array(vas_structure.product_values)), cmap='jet')
         
         # # ==== Plot Nutrient Image ==== #
         ax_nutrient.cla()
         ax_nutrient.set_title('Nutrient Image')
         ax_nutrient.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
         ax_nutrient.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
-        ax_nutrient.imshow(np.rot90(np.array(vas_structure.nutrient_values)))
+        ax_nutrient.imshow(np.rot90(np.array(vas_structure.nutrient_values)), cmap='jet')
 
-        plt.tight_layout()
+        plt.subplots_adjust( wspace = 0.5, hspace = 0.5 )
         plt.draw()
         saveImageOne(iter)
         plt.pause(0.001)
