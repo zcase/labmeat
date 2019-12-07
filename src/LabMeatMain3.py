@@ -69,7 +69,7 @@ def saveImageOne(iteration):
 if __name__ == "__main__":
     print("Autograd LabMeat")
     numNodes = 2
-    stepSize = 0.35 # 0.008
+    stepSize = 0.25 # 0.008
     path_to_diffuse_pngs = 'LabMeatMain3/diffusePngs/'
     sim_img_folder = 'LabMeatMain3/imgs/'
     sim_graph_folder = 'LabMeatMain3/graphs/'
@@ -109,9 +109,9 @@ if __name__ == "__main__":
     ax_loss         = fig.add_subplot(231, frameon=True)
     ax_cpu          = fig.add_subplot(232, frameon=True)
     ax_node_graph   = fig.add_subplot(233, frameon=True)
-    ax_img          = fig.add_subplot(234, frameon=True)
+    ax_nutrient     = fig.add_subplot(234, frameon=True)
     ax_product      = fig.add_subplot(235, frameon=True)
-    ax_nutrient     = fig.add_subplot(236, frameon=True)
+    ax_img          = fig.add_subplot(236, frameon=True)
     plt.show(block=False)
 
     def callback(mvable_pts, iter, nowLoss, time_duration):
