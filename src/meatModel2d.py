@@ -317,17 +317,12 @@ def solveModelODEPDE(vas_structure, times, params = (), nonLinear = False, movab
     odeDeltaList = []
     pdeDeltaList = []
     detlat = times[1]-times[0]
-    # then do the ODE and PDE
-    # print(vas_structure.nutrient_values, vas_structure.product_values)
-    # values = np.array([vas_structure.nutrient_values, vas_structure.product_values])
-    # print('values shape', np.array(vas_structure.product_values).shape)
     values = np.array(np.zeros(np.array(vas_structure.product_values).shape + (2,)))
-    # vesselCellIds = np.array([i for i in range(0,HowManyCells) if VesselCells[i]])
     vessel_points = vas_structure.pts_on_vessels
     vesselCellIds = [(ix, iy) for ix,iy in np.ndindex(np.array(vas_structure.img).shape) if vessel_points[(ix,iy)] > 0.0]
     pdeDelta = np.zeros(np.array(vas_structure.img).shape + (VarCount,))
+    # then do the ODE and PDE
     for t in range(0,len(times)):
-        # deltas are always shape [HowManyCells,VarCount]
         # t_start = time.time()
         trajectories.append(values)
 
@@ -356,19 +351,13 @@ def solveModelODEPDE(vas_structure, times, params = (), nonLinear = False, movab
         # values_end3 = time.time()
         # print('    Values3: ', values_end3-values_start3, 'seconds')
 
-        #values = np.clip(values, 0, 100)
         # update the fitness
         # get the values of the second protein (the waste)
         # sum up the ODE updates along the vessels. 
         # total product removed from the environment
-        # print(odeDelta)
-        # print('ode', odeDelta.shape)
-        # print('ode1', odeDelta[vesselCellIds][1].shape)
-        # print('ids', np.array(vesselCellIds).shape)
-        # print(vesselCellIds)
         deltaList = []
         for ix,iy,iz in np.ndindex(odeDelta.shape):
-            if iz == 0: # possibley be 1 for product value
+            if iz == 1: #product 
                 deltaList.append(odeDelta[(ix,iy,iz)])
         # deltaList = odeDelta[vesselCellIds][:,1][0]
         fitnessList.append(-1*np.sum(deltaList))
@@ -380,18 +369,17 @@ def solveModelODEPDE(vas_structure, times, params = (), nonLinear = False, movab
         # print(f'TIME iter {t}: ', t_end-t_start, 'seconds')
     # print(values[(1,1)])
     for ix,iy,iz in np.ndindex(values.shape):
-        if iz == 0: # possibley be 1 for product value
+        if iz == 0:
             try:
                 vas_structure.nutrient_values[ix][iy] = values[(ix,iy,iz)]._value
             except AttributeError as e:
                 vas_structure.nutrient_values[ix][iy] = values[(ix,iy,iz)]
-                print(values[(ix,iy,iz)])
         elif iz == 1:
             try:
                 vas_structure.product_values[ix][iy] = values[(ix,iy,iz)]._value
             except AttributeError as e:
                 vas_structure.product_values[ix][iy] = values[(ix,iy,iz)]
-    #(dynamicsTrue, fitnessList, odeDeltaList, pdeDeltaList) = getDynamics(
+   
     return (np.array(trajectories), fitnessList, np.array(odeDeltaList), np.array(pdeDeltaList))
     
 def getDynamics(vas_structure, params, nonLinear = False, movablePts = [], runParameters = None):
