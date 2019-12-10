@@ -69,7 +69,7 @@ def saveImageOne(iteration):
 if __name__ == "__main__":
     print("Autograd LabMeat")
     numNodes = 2
-    stepSize = 0.25 # 0.008
+    stepSize = 0.1 # 0.008
     path_to_diffuse_pngs = 'LabMeatMain3/diffusePngs/'
     sim_img_folder = 'LabMeatMain3/imgs/'
     sim_graph_folder = 'LabMeatMain3/graphs/'
@@ -174,8 +174,8 @@ if __name__ == "__main__":
         return 3
 
     gradFitness = grad(fitnessValue)
-    m = np.zeros(np.array(mvable_pts).shape)
-    v = np.zeros(np.array(mvable_pts).shape)
+    m = np.zeros(np.array(mvable_pts).shape, dtype=np.float64)
+    v = np.zeros(np.array(mvable_pts).shape, dtype=np.float64)
     b1=0.9
     b2=0.999
     eps=10**-8
@@ -184,12 +184,12 @@ if __name__ == "__main__":
         start = time.time()
         grad_pts = gradFitness(mvable_pts, i)
 
-        m = (1 - b1) * np.array(grad_pts)      + b1 * m  # First  moment estimate.
-        v = (1 - b2) * (np.array(grad_pts)**2) + b2 * v  # Second moment estimate.
+        m = (1 - b1) * np.array(grad_pts, dtype=np.float64)      + b1 * m  # First  moment estimate.
+        v = (1 - b2) * (np.array(grad_pts, dtype=np.float64)**2) + b2 * v  # Second moment estimate.
         mhat = m / (1 - b1**(i + 1))    # Bias correction.
         vhat = v / (1 - b2**(i + 1))
 
-        mvable_pts = tuple(np.array(mvable_pts) + np.array(grad_pts))
+        mvable_pts = tuple(np.array(mvable_pts, dtype=np.float64) + np.array(grad_pts, dtype=np.float64))
         mvable_pts = mvable_pts + stepSize * mhat / (np.sqrt(vhat) + eps)
         new_pts = []
         for val in mvable_pts:

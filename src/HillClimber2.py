@@ -76,14 +76,15 @@ def saveImageOne(iteration):
 
 if __name__ == "__main__":
     print("Climbing the hill")
-    numNodes = 2
+    numNodes = 4
+    grid_size = 40
     path_to_diffuse_pngs = 'Hillclimb/diffusePngs/'
     sim_img_folder = 'Hillclimb/imgs/'
     sim_graph_folder = 'Hillclimb/graphs/'
 
     create_remove_imgs()
 
-    vas_structure = VasGen2(max_range=20, num_of_nodes=numNodes, side_nodes=False)
+    vas_structure = VasGen2(max_range=grid_size, num_of_nodes=numNodes, side_nodes=False)
     vas_structure.print_images(graph_name='HillClimb/HillClimb_startGraph.png', img_name='HillClimb/HillClimb_startImg.png')
 
     test_movement = np.array([-5, -2, -1, 0, 1, 2, 5])
@@ -195,13 +196,13 @@ if __name__ == "__main__":
 
         if test_x < 1:
             test_x = 1
-        if test_x > 19:
-            test_x = 19
+        if test_x > grid_size-1:
+            test_x = grid_size-1
 
         if test_y < 1:
             test_y = 1
-        if test_y > 19:
-            test_y = 19
+        if test_y > grid_size-1:
+            test_y = grid_size
 
         vas_structure.moveable_pts[index] = [test_x, test_y]
         mvable_pts = vas_structure.moveable_pts

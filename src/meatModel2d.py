@@ -73,7 +73,7 @@ def oneCell_ODE(oneCell, params, cellId, OnePdeDelta, vas_structure):
         #print("Xn = %.10f regulate = %.10f   %.10f" % (Xm, hillPlusOne(Nu, k_p) , hillMinusOne(Xm, k_i))) #regulatePlusMinus(Nu, k_p, Xm, k_i)))
     return np.array([deltaNutrient, deltaProduct])
     
-def step_ODE(values, params, pdeDelta, vas_structure):
+def step_ODE(values, params, pdeDelta, vas_structure, shape_of_img):
     # Computes the changes to the protein values for all the cells
     # based on each cells ODE
     # ode_Delta = np.zeros(np.array(vas_structure.img).shape+(2,))
@@ -86,31 +86,31 @@ def step_ODE(values, params, pdeDelta, vas_structure):
     #     # ode_Delta.append(oneCell_ODE(values[cellId,:], params, cellId, pdeDelta[cellId,:], vas_structure))
     #     ode_Delta[cellId] = oneCell_ODE(values[cellId], params, cellId, pdeDelta[cellId], vas_structure)
 
-    shape = np.array(vas_structure.img).shape
+    # shape = np.array(vas_structure.img).shape
     # print(shape)
-    r, c = shape
+    r, c = shape_of_img
     ode_Delta = []
     for _ in range(r):
         ode_Delta.append([0 for _ in range(c)])
 
-    for ix,iy in np.ndindex(np.array(vas_structure.img).shape):
+    for ix,iy in np.ndindex(shape_of_img):
         cellId = (ix, iy)
         ode_Delta[ix][iy] = oneCell_ODE(values[cellId], params, cellId, pdeDelta[cellId], vas_structure)
-    return np.array(ode_Delta)
+    return np.array(ode_Delta, dtype=np.float64)
     
-def step_PDE(values, params, vas_structure, nonLinear = False, movablePts = []):
+def step_PDE(values, params, vas_structure, shape_of_img, nonLinear = False, movablePts = []):
     # Update the values based on diffusion of the proteins to nearby cells
     (sigmaNu, sigmaXm, muNu, muXm, k_out, k_in, k_p, k_i, k_l, Dn, Dx) = params
     diffusion = np.array([Dn, Dx]) #get the diffusion parameters
     # pde_Delta = np.zeros((HowManyCells, VarCount))
-    pde_Delta = np.zeros(np.array(vas_structure.img).shape + (VarCount,))
+    pde_Delta = np.zeros(shape_of_img + (VarCount,), dtype=np.float64)
     values = values.T # by protein rather than cell
     newDiff = []
     for i in range(0, VarCount): # for each protein
         D = diffusion[i] #get the diffusion parameter
         if nonLinear: # precompute the adjustments needed for the moveable points
             # start = time.time()
-            adjustmentPDE = D * nonLinearAdjustment(movablePts, np.array(vas_structure.img).shape)
+            adjustmentPDE = D * nonLinearAdjustment(movablePts, shape_of_img)
             # end = time.time()
             # print('Nonlinear Adjust = ', end-start, 'seconds')
             #print(adjustmentPDE)
@@ -140,7 +140,7 @@ def step_PDE(values, params, vas_structure, nonLinear = False, movablePts = []):
 
 def addSources(params, shape):
     # No sources in system
-    sourceRates = np.zeros(shape)
+    sourceRates = np.zeros(shape, dtype=np.float64)
     return np.array([sourceRates, sourceRates]).T #flip by cell
     
 ############################################################################
@@ -151,7 +151,7 @@ def nonLinearAdjustment(movablePts, shape):
     # adjustment is constant for each simulation, because the points do
     # not move so compute once
     r, c = shape
-    allAdjustment = np.zeros(shape)
+    allAdjustment = np.zeros(shape, dtype=np.float64)
     # for x in movablePts: #only single numbers in x one D
     for i in range(len(movablePts)):
         pt = movablePts[i]
@@ -251,7 +251,7 @@ def nonLinearAdjustment(movablePts, shape):
 
 
 def get_submatrix_add(lst_matrix, center_pt_tuple, convolution):
-    np_matrix = np.array(lst_matrix)
+    np_matrix = np.array(lst_matrix, dtype=np.float64)
     r, c = np_matrix.shape
     lt_padding = 0 + (center_pt_tuple[0] - 1)
     rt_padding = (c-1) - (center_pt_tuple[0] + 1)
@@ -275,7 +275,7 @@ def get_submatrix_add(lst_matrix, center_pt_tuple, convolution):
         btm_padding = 0
         col_end = col_end - 1
 
-    padded_convo = np.pad(np.array(convolution)[row_start:row_end, col_start:col_end], ((top_padding, btm_padding), (lt_padding, rt_padding)), mode='constant', constant_values=(0, 0))
+    padded_convo = np.pad(np.array(convolution)[row_start:row_end, col_start:col_end], ((top_padding, btm_padding), (lt_padding, rt_padding)), mode='constant', constant_values=(0.0, 0.0))
 
     try:
         new_matrix = np_matrix + padded_convo
@@ -317,17 +317,18 @@ def solveModelODEPDE(vas_structure, times, params = (), nonLinear = False, movab
     odeDeltaList = []
     pdeDeltaList = []
     detlat = times[1]-times[0]
-    values = np.array(np.zeros(np.array(vas_structure.product_values).shape + (2,)))
+    shape_of_img = np.array(vas_structure.product_values).shape
+    values = np.zeros(shape_of_img + (2,), dtype=np.float64) 
     vessel_points = vas_structure.pts_on_vessels
-    vesselCellIds = [(ix, iy) for ix,iy in np.ndindex(np.array(vas_structure.img).shape) if vessel_points[(ix,iy)] > 0.0]
-    pdeDelta = np.zeros(np.array(vas_structure.img).shape + (VarCount,))
+    vesselCellIds = [(ix, iy) for ix,iy in np.ndindex(shape_of_img) if vessel_points[(ix,iy)] > 0.0]
+    pdeDelta = np.zeros(shape_of_img + (VarCount,), dtype=np.float64)
     # then do the ODE and PDE
     for t in range(0,len(times)):
         # t_start = time.time()
         trajectories.append(values)
 
         # ode_start = time.time()
-        odeDelta = step_ODE(values, params, pdeDelta, vas_structure) #ODE updates
+        odeDelta = step_ODE(values, params, pdeDelta, vas_structure, shape_of_img) #ODE updates
         # ode_end = time.time()
         # print('    step ODE: ', ode_end-ode_start, 'seconds')
 
@@ -337,7 +338,7 @@ def solveModelODEPDE(vas_structure, times, params = (), nonLinear = False, movab
         # print('    Values: ', values_end-values_start, 'seconds')
 
         # pde_start = time.time()
-        pdeDelta = step_PDE(values, params, vas_structure, nonLinear = nonLinear, movablePts=movablePts) #PDE updates
+        pdeDelta = step_PDE(values, params, vas_structure, shape_of_img, nonLinear = nonLinear, movablePts=movablePts) #PDE updates
         # pde_end = time.time()
         # print('    step PDE: ', pde_end-pde_start, 'seconds')
 
@@ -347,7 +348,7 @@ def solveModelODEPDE(vas_structure, times, params = (), nonLinear = False, movab
         # print('    Values2: ', values_end2-values_start2, 'seconds')
 
         # values_start3 = time.time()
-        values = values + addSources(params, np.array(vas_structure.img).shape) # add sources (0 for meat domain)
+        values = values + addSources(params, shape_of_img) # add sources (0 for meat domain)
         # values_end3 = time.time()
         # print('    Values3: ', values_end3-values_start3, 'seconds')
 
