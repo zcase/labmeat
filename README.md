@@ -2,6 +2,7 @@
 CS6890 Lab Grown Meat Project
 
 # Installation
+Make sure you have python 3.6+ installed (64 bit version on Windows)
 
 pip install scipy numpy matplotlib bresenham autograd imageio natsort scikit-image
 
