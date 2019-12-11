@@ -3,7 +3,7 @@ CS6890 Lab Grown Meat Project
 
 # Installation
 
-pip install scipy numpy matplotlib bresenham autograd
+pip install scipy numpy matplotlib bresenham autograd imageio natsort scikit-image
 
 # Run Application
 

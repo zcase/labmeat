@@ -1,9 +1,13 @@
-from VascularGenerator import VascularGenerator
 from VasGen2 import VasGen2
 from equations import *
-from diffu2D_u0 import lab_meat_diffuse
 import os
 import math
+import matplotlib
+
+if os.sys.platform == "linux" or os.sys.platform == "linux2":
+    matplotlib.use('TKAgg')
+elif os.sys.platform == "darwin":
+    matplotlib.use('MacOSX')
 import matplotlib.pyplot as plt
 
 import random
@@ -11,7 +15,6 @@ import time
 
 import imageio
 from natsort import natsorted, ns
-from sklearn.preprocessing import minmax_scale
 
 import autograd.numpy as np
 from autograd import grad
@@ -23,12 +26,6 @@ import autograd.scipy.signal as sig
 from timeit import default_timer as timer
 from meatModel2d import getDynamics, getTrueParameters, getSampleParameters
 
-
-def sigmoid(x):
-    return 1 / (1 + math.exp(-x))
-
-def gaussian(x):
-    return math.exp(-x**2)
 
 def create_remove_imgs():
     path_to_diffuse_pngs = 'Hillclimb/diffusePngs/'
@@ -133,7 +130,6 @@ if __name__ == "__main__":
         ax_cpu.set_xlabel('Iteration')
         ax_cpu.set_ylabel('CPU Time (s)')
         time_lst.append(time_duration)
-        # ax_cpu.scatter(time_lst, all_loss)
         ax_cpu.plot(iteration, time_lst, '-', linestyle = 'solid', label='CPU Time')
         ax_cpu.legend(loc = "upper left")
 
@@ -174,7 +170,6 @@ if __name__ == "__main__":
         return 3
 
     dImproved = False
-    # currentLoss = fitness(mvable_pts, 0)
     currentLoss = -1
     i = 0
     timesNotImproved = 0
@@ -241,7 +236,6 @@ if __name__ == "__main__":
         i += 1
 
 
-
     def img_path_generator(path_to_img_dir):
         for i, file_name in enumerate(natsorted(os.listdir(path_to_img_dir), key=lambda y: y.lower())):
             if file_name.endswith('.png'):
@@ -251,4 +245,3 @@ if __name__ == "__main__":
 
     sim_fig_folder = 'HillClimb/figs/'
     imageio.mimsave('HillClimb/HillClimb_Figs.gif', img_path_generator(sim_fig_folder), fps=10)
-
